@@ -1,0 +1,14 @@
+cdk.out
+.idea/
+node_modules
+dist/
+coverage/
+temp/
+**/*.d.ts
+**/*.js
+**/*.js.map
+src/baran.ts
+testapp/*
+app.ts
+api.ts
+*.tgz
