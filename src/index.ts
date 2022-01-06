@@ -173,6 +173,7 @@ interface RBSCloudObjectItem {
     config: RBSCloudObjectData
     isNewInstance: boolean
     methods?: RBSCloudObjectMethod[]
+    response: any
     call(params: RBSCloudObjectCallData): Promise<RBSCallResponse<any>>
     state: RBSCloudObjectStates
     getState(params?: RBSCloudObjectRequest): Promise<RBSCallResponse<RBSCloudObjectState>>
@@ -183,6 +184,7 @@ export interface RBSCloudObject<T> {
     instanceId: string
     isNewInstance: boolean
     methods: RBSCloudObjectMethod[]
+    response?: any
     call(params: RBSCloudObjectCallData): Promise<RBSCallResponse<T>>
     getState(params?: RBSCloudObjectRequest): Promise<RBSCallResponse<RBSCloudObjectState>>
     state?: RBSCloudObjectStates
@@ -1110,12 +1112,13 @@ export default class RBS {
             config: data,
             isNewInstance: instanceResponse?.newInstance ?? false,
             methods: instanceResponse?.methods,
+            response: instanceResponse?.response,
             call,
             state,
             getState,
             unsubscribers,
         })
 
-        return { instanceId: data.instanceId!, state, call, getState, isNewInstance: instanceResponse?.newInstance ?? false, methods: instanceResponse?.methods || [] }
+        return { instanceId: data.instanceId!, state, call, getState, isNewInstance: instanceResponse?.newInstance ?? false, methods: instanceResponse?.methods || [], response: instanceResponse.response }
     }
 }
