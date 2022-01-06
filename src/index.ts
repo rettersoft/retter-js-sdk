@@ -418,7 +418,8 @@ export default class RBS {
                     action,
                 }
                 return defer(() => {
-                    const url = `${this.getApiUrl()}/CALL/ProjectUser/authWithCustomToken/${this.clientConfig!.projectId}_${action.data.userId}`
+                    const userId = jwtDecode<RbsJwtPayload>(action.data.token).userId
+                    const url = `${this.getApiUrl()}/CALL/ProjectUser/authWithCustomToken/${this.clientConfig!.projectId}_${userId}`
                     return this.getPlain(url, { customToken: action.data.token }, actionWrapper)
                 }).pipe(materialize())
             }),
@@ -558,6 +559,7 @@ export default class RBS {
 
                 const accessTokenExpiresAt = jwtDecode<RbsJwtPayload>(storedTokenData.accessToken).exp || 0
                 const refreshTokenExpiresAt = jwtDecode<RbsJwtPayload>(storedTokenData.refreshToken).exp || 0
+                const userId = jwtDecode<RbsJwtPayload>(storedTokenData.refreshToken).userId
 
                 // If token doesn't need refreshing return it.
                 if (refreshTokenExpiresAt > now && accessTokenExpiresAt > now) {
@@ -572,8 +574,7 @@ export default class RBS {
                     // Refresh token
                     log.info('RBSSDK LOG: token refresh needed')
                     try {
-                        const url = `${this.getApiUrl()}/CALL/ProjectUser/refreshToken/${this.clientConfig!.projectId}`
-                        console.log('RBSSDK LOG: url:', url)
+                        const url = `${this.getApiUrl()}/CALL/ProjectUser/refreshToken/${this.clientConfig!.projectId}_${userId}`
                         actionWrapper.tokenData = await this.getP<RBSTokenData>(url, {
                             refreshToken: storedTokenData.refreshToken,
                         })
@@ -882,14 +883,13 @@ export default class RBS {
         })
     }
 
-    public authenticateWithCustomToken = (userId: string, token: string): Promise<RBSAuthChangedEvent> => {
+    public authenticateWithCustomToken = (token: string): Promise<RBSAuthChangedEvent> => {
         if (!this.initialized) throw new Error('RBS SDK is not initialized')
 
         return new Promise((resolve, reject) => {
             let action = {
                 action: 'customauth', // this string is not used here.
                 data: {
-                    userId,
                     token,
                 },
 
@@ -930,7 +930,8 @@ export default class RBS {
     protected logoutUser = async (): Promise<boolean> => {
         return new Promise(async (resolve, reject) => {
             let tokenData = await this.getStoredTokenData()
-            let endpoint = `${this.getApiUrl()}/CALL/ProjectUser/signOut/${this.clientConfig!.projectId}`
+            const userId = tokenData ? jwtDecode<RbsJwtPayload>(tokenData!.accessToken).userId : ''
+            let endpoint = `${this.getApiUrl()}/CALL/ProjectUser/signOut/${this.clientConfig!.projectId}_${userId}`
 
             try {
                 await this.getP(endpoint, {
@@ -944,7 +945,6 @@ export default class RBS {
 
     protected initFirebase = async (): Promise<void> => {
         const firebaseConfig = (await this.getStoredTokenData())?.firebase
-        console.log({firebaseConfig})
         if (!firebaseConfig) return
 
         if (!this.firebaseApp) {
@@ -962,7 +962,6 @@ export default class RBS {
 
     private getFirebaseListeners = async (data: RBSCloudObjectData, queue: ReplaySubject<any>, key: keyof RBSCloudObjectStates): Promise<Unsubscribe | null> => {
         const userData = await this.getUser()
-        console.log({userData})
 
         if (!userData && key !== 'public') return null
         let documentId = data.instanceId!
@@ -976,7 +975,6 @@ export default class RBS {
             documentId = userData!.userId!
             collection += `/${data.instanceId}/userState`
         }
-        console.log(collection, documentId)
 
         const document = doc(this.firestore!, collection, documentId)
 
