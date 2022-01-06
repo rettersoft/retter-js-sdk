@@ -179,11 +179,11 @@ interface RBSCloudObjectItem {
     unsubscribers: (Unsubscribe | null)[]
 }
 
-export interface RBSCloudObject {
+export interface RBSCloudObject<T> {
     instanceId: string
     isNewInstance: boolean
     methods: RBSCloudObjectMethod[]
-    call(params: RBSCloudObjectCallData): Promise<RBSCallResponse<any>>
+    call(params: RBSCloudObjectCallData): Promise<RBSCallResponse<T>>
     getState(params?: RBSCloudObjectRequest): Promise<RBSCallResponse<RBSCloudObjectState>>
     state?: RBSCloudObjectStates
 }
@@ -198,9 +198,9 @@ export interface RBSCloudObjectData {
     instanceId?: string
     method?: string
     headers?: { [key: string]: string }
-    querystring?: { [key: string]: string }
+    queryStringParams?: { [key: string]: string }
     httpMethod?: 'get' | 'delete' | 'post' | 'put'
-    payload?: { [key: string]: any }
+    body?: { [key: string]: any }
     useLocal?: boolean
     token?: string
 }
@@ -622,8 +622,8 @@ export default class RBS {
             _token: actionWrapper.tokenData?.accessToken,
         }
 
-        for (let key in data.querystring || []) {
-            params[key] = data.querystring![key]
+        for (let key in data.queryStringParams || []) {
+            params[key] = data.queryStringParams![key]
         }
 
         try {
@@ -632,7 +632,7 @@ export default class RBS {
                 url: url,
                 method: data.httpMethod ?? 'post',
                 params,
-                data: data.payload,
+                data: data.body,
                 headers: { ...data.headers, accept: 'text/plain', 'Content-Type': 'text/plain' },
             })
 
@@ -1010,7 +1010,7 @@ export default class RBS {
         return `https://${this.clientConfig!.projectId}.${region.apiUrl}/${method}/${classId}${methodId ? '/' + methodId : ''}${instanceId ? '/' + instanceId : ''}`
     }
 
-    public getCloudObject = async (data: RBSCloudObjectData): Promise<RBSCloudObject> => {
+    public getCloudObject = async (data: RBSCloudObjectData): Promise<RBSCloudObject<any>> => {
         if (data.useLocal && data.instanceId) {
             return {
                 instanceId: data.instanceId,
