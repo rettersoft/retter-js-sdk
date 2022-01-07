@@ -912,6 +912,11 @@ export default class RBS {
 
     public signOut = async (): Promise<boolean> => {
         if (!this.initialized) throw new Error('RBS SDK is not initialized')
+        
+        this.fireAuthStatus(await this.getStoredTokenData())
+        await this.cleanInitFirebase()
+
+        await this.logoutUser()
 
         if (typeof document != 'undefined') {
             localStorage.removeItem(this.getTokenDataKey())
@@ -920,11 +925,6 @@ export default class RBS {
         } else {
             this.latestTokenData = undefined
         }
-
-        this.fireAuthStatus(await this.getStoredTokenData())
-        await this.cleanInitFirebase()
-
-        this.logoutUser()
 
         return true
     }
