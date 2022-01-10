@@ -280,10 +280,11 @@ export default class Retter {
         return await this.sendToAuthQueue<RetterAuthChangedEvent>({ action: RetterActions.SIGN_IN, data: token })
     }
 
-    public signOut(): void {
+    public async signOut(): Promise<void> {
         if (!this.initialized) throw new Error('Retter SDK not initialized.')
 
-        this.auth!.clearTokenData()
+        await this.clearCloudObjects()
+        await this.auth!.clearTokenData()
         // Fire auth status after all tokens cleared
         this.fireAuthStatus({})
 
