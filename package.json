@@ -1,48 +1,32 @@
 {
-  "name": "@retter/sdk",
-  "version": "0.1.15",
-  "description": "Client sdk for retter.io",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc",
-    "testrun": "npm run build && node dist/app.js",
-    "prepare": "npm run build"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/rettersoft/retter-js-sdk.git"
-  },
-  "author": "Baran Baygan",
-  "license": "ISC",
-  "devDependencies": {
-    "@types/jest": "^26.0.14",
-    "@types/node": "^16.11.7",
-    "dotenv": "^8.2.0",
-    "jest": "26.6.0",
-    "tslib": "^2.3.1",
-    "typescript": "^4.0.2"
-  },
-  "dependencies": {
-    "@react-native-async-storage/async-storage": "1.15.6",
-    "axios": "^0.24.0",
-    "buffer": "6.0.3",
-    "firebase": "^9.2.0",
-    "jwt-decode": "3.1.2",
-    "loglevel": "1.7.1",
-    "rxjs": "6.6.3"
-  },
-  "bugs": {
-    "url": "https://github.com/rettersoft/retter-js-sdk/issues"
-  },
-  "homepage": "https://github.com/rettersoft/retter-js-sdk#readme",
-  "jest": {
-    "verbose": true,
-    "preset": "ts-jest",
-    "testEnvironment": "node"
-  }
+    "name": "@retter/sdk",
+    "version": "0.2.0",
+    "description": "Client sdk for retter.io",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "files": [
+        "dist"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/rettersoft/retter-js-sdk.git"
+    },
+    "bugs": {
+        "url": "https://github.com/rettersoft/retter-js-sdk/issues"
+    },
+    "homepage": "https://github.com/rettersoft/retter-js-sdk#readme",
+    "author": "Semih Ayhan",
+    "license": "ISC",
+    "dependencies": {
+        "@react-native-async-storage/async-storage": "^1.15.14",
+        "@types/node": "^17.0.8",
+        "axios": "^0.24.0",
+        "firebase": "^9.6.2",
+        "jwt-decode": "^3.1.2",
+        "rxjs": "6.6.3",
+        "typescript": "^4.5.4"
+    },
+    "scripts": {
+        "test": "ts-node test/index.ts"
+    }
 }
