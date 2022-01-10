@@ -422,6 +422,7 @@ export default class RBS {
                 return defer(() => {
                     const userId = jwtDecode<RbsJwtPayload>(action.data.token).userId
                     const url = `${this.getApiUrl()}/CALL/ProjectUser/authWithCustomToken/${this.clientConfig!.projectId}_${userId}`
+                    console.log('-- custom auth -- userId: ', userId)
                     return this.getPlain(url, { customToken: action.data.token }, actionWrapper)
                 }).pipe(materialize())
             }),
@@ -452,12 +453,15 @@ export default class RBS {
                     return actionWrapper
                 }),
                 tap(async actionWrapper => {
+                    await this.cleanFirebase()
                     if (actionWrapper.tokenData) {
                         await this.setTokenData(actionWrapper.tokenData)
+
+                        await this.initFirebase()
                     }
                     this.fireAuthStatus(actionWrapper.tokenData)
+                    console.log('-- customAuthResult -- auth status fired')
                 }),
-                tap(async () => await this.cleanInitFirebase())
             )
             .subscribe(async actionWrapper => {
                 let authEvent = this.getAuthChangedEvent(await this.getStoredTokenData())
@@ -467,6 +471,7 @@ export default class RBS {
             })
 
         customAuthResult.pipe(filter(r => r.hasValue === false && r.kind === 'E')).subscribe(e => {
+            console.log('-- customAuthResult ', e)
             if (e.error) {
                 let actionWrapper: RBSActionWrapper = e.error
                 if (actionWrapper.action?.onError) {
@@ -580,7 +585,8 @@ export default class RBS {
                         actionWrapper.tokenData = await this.getP<RBSTokenData>(url, {
                             refreshToken: storedTokenData.refreshToken,
                         })
-                        if (!this.firebaseApp) await this.initFirebase()
+                        console.log('-- getActionWithTokenData -- token refreshed')
+                        console.log('-- getActionWithTokenData -- firebase app: ', !!this.firebaseApp)
                     } catch (err) {
                         this.signOut()
                     }
@@ -598,10 +604,10 @@ export default class RBS {
                 }
 
                 actionWrapper.tokenData = (await this.getP<{ response: RBSTokenData }>(url, params)).response
-                if (!this.firebaseApp) await this.initFirebase()
 
                 log.info('RBSSDK LOG: fetched anonym token:', actionWrapper.tokenData)
             }
+            if (!this.firebaseApp) await this.initFirebase()
 
             log.info('RBSSDK LOG: resolving with actionWrapper:', actionWrapper)
 
@@ -912,9 +918,8 @@ export default class RBS {
 
     public signOut = async (): Promise<boolean> => {
         if (!this.initialized) throw new Error('RBS SDK is not initialized')
-        
-        this.fireAuthStatus(await this.getStoredTokenData())
-        await this.cleanInitFirebase()
+        console.log('Signing out...')
+        await this.cleanFirebase()
 
         await this.logoutUser()
 
@@ -926,6 +931,7 @@ export default class RBS {
             this.latestTokenData = undefined
         }
 
+        this.fireAuthStatus(undefined)
         return true
     }
 
@@ -947,9 +953,12 @@ export default class RBS {
 
     protected initFirebase = async (): Promise<void> => {
         const firebaseConfig = (await this.getStoredTokenData())?.firebase
+        console.log('-- initFirebase -- firebaseConfig', firebaseConfig)
+
         if (!firebaseConfig) return
 
         if (!this.firebaseApp) {
+            console.log('-- initFirebase -- firebase app not defined')
             this.firebaseApp = initializeApp({
                 apiKey: firebaseConfig.apiKey,
                 authDomain: firebaseConfig.projectId + '.firebaseapp.com',
@@ -958,11 +967,16 @@ export default class RBS {
             this.firestore = getFirestore(this.firebaseApp)
             this.firebaseAuth = getAuth(this.firebaseApp)
 
-            await signInWithCustomToken(this.firebaseAuth!, firebaseConfig.customToken)
+            const fireUser = await signInWithCustomToken(this.firebaseAuth!, firebaseConfig.customToken)
+            await fireUser.user.getIdToken()
+            console.log('-- initFirebase -- firebase authenticated')
         }
     }
 
     private getFirebaseListeners = async (data: RBSCloudObjectData, queue: ReplaySubject<any>, key: keyof RBSCloudObjectStates): Promise<Unsubscribe | null> => {
+        const idToken = await this.firebaseAuth?.currentUser?.getIdToken()
+        console.log('-- getFirebaseListeners -- idToken', idToken)
+
         const userData = await this.getUser()
 
         if (!userData && key !== 'public') return null
@@ -978,6 +992,7 @@ export default class RBS {
             collection += `/${data.instanceId}/userState`
         }
 
+        console.log('-- getFirebaseListeners -- collection', collection, documentId)
         const document = doc(this.firestore!, collection, documentId)
 
         const unsubscribe = onSnapshot(document, doc => {
@@ -991,7 +1006,7 @@ export default class RBS {
         return unsubscribe
     }
 
-    private cleanInitFirebase = async () => {
+    private cleanFirebase = async () => {
         // unsubscribe from all events
         this.cloudObjects.map((cloudObject: RBSCloudObjectItem) => {
             cloudObject.unsubscribers.map(unsubscribe => unsubscribe && unsubscribe())
@@ -1001,6 +1016,7 @@ export default class RBS {
         this.firebaseApp = null
         this.firestore = null
         this.firebaseAuth = null
+        console.log('-- cleanInitFirebase -- firebase app cleaned')
     }
 
     private isCosAction = (action: string): boolean => {
@@ -1013,6 +1029,7 @@ export default class RBS {
     }
 
     public getCloudObject = async (data: RBSCloudObjectData): Promise<RBSCloudObject<any>> => {
+        console.log('-- getCloudObject -- data', data)
         if (data.useLocal && data.instanceId) {
             return {
                 instanceId: data.instanceId,
@@ -1049,9 +1066,6 @@ export default class RBS {
             token: data.token,
         })
 
-        if (!this.firebaseApp) {
-            await this.initFirebase()
-        }
         if (instanceResponse?.instanceId) data.instanceId = instanceResponse.instanceId
 
         let seekedObject = this.cloudObjects.find(cloudObject => cloudObject.config.classId === data.classId && cloudObject.config.instanceId === data.instanceId)
@@ -1119,6 +1133,14 @@ export default class RBS {
             unsubscribers,
         })
 
-        return { instanceId: data.instanceId!, state, call, getState, isNewInstance: instanceResponse?.newInstance ?? false, methods: instanceResponse?.methods || [], response: instanceResponse.response }
+        return {
+            instanceId: data.instanceId!,
+            state,
+            call,
+            getState,
+            isNewInstance: instanceResponse?.newInstance ?? false,
+            methods: instanceResponse?.methods || [],
+            response: instanceResponse.response,
+        }
     }
 }
