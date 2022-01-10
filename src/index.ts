@@ -195,7 +195,7 @@ export default class Retter {
         }
 
         return defer(async () => {
-            const endpoint = this.getCosEndpoint(actionWrapper.action!)
+            const endpoint = this.getCosEndpoint(actionWrapper)
             const response = await this.http!.call(this.clientConfig!.projectId, endpoint.path, endpoint.params)
             return { ...actionWrapper, response }
         }).pipe(materialize())
@@ -227,23 +227,39 @@ export default class Retter {
     }
 
     // Cloud Objects
-    protected getCosEndpoint(action: RetterAction): { path: string; params: any } {
+    protected getCosEndpoint(ev: RetterActionWrapper): { path: string; params: any } {
+        const action = ev.action!
         const data = action.data as RetterCloudObjectConfig
+        const queryParams: any = {
+            _token: data.token ?? ev.tokenData?.accessToken,
+        }
+
+        for (let key in data.queryStringParams || []) {
+            queryParams[key] = data.queryStringParams![key]
+        }
+
+        const params = {
+            params: queryParams,
+            method: data.method ?? 'post',
+            data: data.body,
+            headers: { ...data.headers, accept: 'text/plain', 'Content-Type': 'text/plain' },
+        }
+
         if (action.action === RetterActions.COS_INSTANCE) {
             const instanceId = data.key ? `${data.key.name}!${data.key.value}` : data.instanceId
             return {
                 path: `INSTANCE/${data.classId}${data.instanceId ? `/${instanceId}` : ''}`,
-                params: {},
+                params,
             }
         } else if (action.action === RetterActions.COS_STATE) {
             return {
                 path: `STATE/${data.classId}/${data.instanceId}`,
-                params: {},
+                params,
             }
         } else {
             return {
                 path: `CALL/${data.classId}/${data.method}/${data.instanceId}`,
-                params: {},
+                params,
             }
         }
     }
