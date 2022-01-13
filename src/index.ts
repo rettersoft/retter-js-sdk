@@ -4,7 +4,7 @@ import { FirebaseApp, initializeApp } from 'firebase/app'
 import { doc, Firestore, onSnapshot } from 'firebase/firestore'
 import { Auth, getAuth, signInWithCustomToken, signOut } from 'firebase/auth'
 import { defer, Notification, Observable, of, ReplaySubject, Subject } from 'rxjs'
-import { concatMap, distinctUntilChanged, filter, map, materialize, mergeMap, share, tap } from 'rxjs/operators'
+import { concatMap, distinctUntilChanged, filter, map, materialize, mergeMap, share, switchMap, tap } from 'rxjs/operators'
 
 import RetterAuth from './Auth'
 import RetterRequest from './Request'
@@ -78,7 +78,7 @@ export default class Retter {
         this.processActionQueue()
 
         setTimeout(async () => {
-            const tokenData = await this.auth!.getCurrentTokenData()
+            const tokenData = await this.auth!.getCurrentTokenData(true)
             this.fireAuthStatus({ tokenData })
         }, 1)
     }
@@ -103,14 +103,18 @@ export default class Retter {
             .pipe(
                 filter(r => r.hasValue && r.kind === 'N'),
                 map(e => ({ ...e.value, tokenData: e.value?.response })),
-                tap(this.storeTokenData.bind(this)),
-                tap(async ev => {
+                switchMap(async ev => {
+                    await this.storeTokenData(ev)
+                    return ev
+                }),
+                switchMap(async ev => {
                     await this.clearCloudObjects()
                     if (ev.tokenData) {
-                        this.initFirebase(ev)
+                        await this.initFirebase(ev)
                     }
+                    this.fireAuthStatus(ev)
+                    return ev
                 }),
-                tap(this.fireAuthStatus.bind(this))
             )
             .subscribe(ev => {
                 if (ev.action?.resolve) {
@@ -136,13 +140,16 @@ export default class Retter {
         const actionResult = this.actionQueue.asObservable().pipe(
             // Get current token data if exists and store it in action
             concatMap(this.getActionWithTokenData.bind(this)),
-            // // Fire auth status event
+            // Fire auth status event
             tap(this.fireAuthStatus.bind(this)),
-            // // Make sure we have a token
+            // Make sure we have a token
             filter(ev => ev.tokenData !== null),
-            // // Store token data
-            tap(this.storeTokenData.bind(this)),
-            // // Process action
+            // Store token data
+            switchMap(async ev => {
+                await this.storeTokenData(ev)
+                return ev
+            }),
+            // Process action
             mergeMap(this.processAction.bind(this)),
             share()
         )
@@ -150,6 +157,12 @@ export default class Retter {
         actionResult.pipe(filter(r => r.hasValue && r.kind === 'N')).subscribe(e => {
             if (e.value && e.value.action && e.value.action.resolve && e.value.response) {
                 e.value.action.resolve(e.value.response)
+            }
+        })
+
+        actionResult.pipe(filter(r => r.hasValue === false && r.kind === 'E')).subscribe(e => {
+            if (e.error && e.error.action && e.error.action.reject && e.error.responseError) {
+                e.error.action.reject(e.error.responseError)
             }
         })
     }
@@ -195,27 +208,34 @@ export default class Retter {
         }
 
         return defer(async () => {
-            const endpoint = this.getCosEndpoint(actionWrapper)
-            const response = await this.http!.call(this.clientConfig!.projectId, endpoint.path, endpoint.params)
-            return { ...actionWrapper, response }
+            try {
+                const endpoint = this.getCosEndpoint(actionWrapper)
+                const response = await this.http!.call(this.clientConfig!.projectId, endpoint.path, endpoint.params)
+                return { ...actionWrapper, response }
+            } catch (error: any) {
+                throw { ...actionWrapper, responseError: error }
+            }
         }).pipe(materialize())
     }
 
     // Firebase
     protected async initFirebase(actionWrapper: RetterActionWrapper) {
         const firebaseConfig = actionWrapper.tokenData?.firebase
-        if (!firebaseConfig || !!this.firebase) return actionWrapper
+        if (!firebaseConfig || this.firebase) return actionWrapper
 
-        this.firebase = initializeApp({
-            apiKey: firebaseConfig.apiKey,
-            authDomain: firebaseConfig.projectId + '.firebaseapp.com',
-            projectId: firebaseConfig.projectId,
-        })
+        this.firebase = initializeApp(
+            {
+                apiKey: firebaseConfig.apiKey,
+                authDomain: firebaseConfig.projectId + '.firebaseapp.com',
+                projectId: firebaseConfig.projectId,
+            },
+            this.clientConfig!.projectId
+        )
 
         this.firestore = getFirestore(this.firebase!)
         this.firebaseAuth = getAuth(this.firebase!)
 
-        await signInWithCustomToken(this.firebaseAuth!, firebaseConfig.customToken)
+        const fireUser = await signInWithCustomToken(this.firebaseAuth!, firebaseConfig.customToken)
 
         return actionWrapper
     }
@@ -240,7 +260,7 @@ export default class Retter {
 
         const params = {
             params: queryParams,
-            method: data.method ?? 'post',
+            method: data.httpMethod ?? 'post',
             data: data.body,
             headers: { ...data.headers, accept: 'text/plain', 'Content-Type': 'text/plain' },
         }
@@ -266,7 +286,6 @@ export default class Retter {
 
     protected getFirebaseListener(queue: ReplaySubject<any>, collection: string, documentId: string): Unsubscribe {
         const document = doc(this.firestore!, collection, documentId)
-        console.log('document', document)
 
         return onSnapshot(document, doc => {
             const data = Object.assign({}, doc.data())
@@ -308,13 +327,36 @@ export default class Retter {
         this.auth!.signOut()
     }
 
-    public async getCloudObject<T>(config: RetterCloudObjectConfig): Promise<RetterCloudObject<T>> {
+    protected async getFirebaseState(config: RetterCloudObjectConfig) {
+        const queues = {
+            role: new ReplaySubject(1),
+            user: new ReplaySubject(1),
+            public: new ReplaySubject(1),
+        }
+
+        const state = {
+            role: queues.role.asObservable(),
+            user: queues.user.asObservable(),
+            public: queues.public.asObservable(),
+        }
+
+        const { projectId } = this.clientConfig!
+        const user = await this.auth!.getCurrentUser()
+
+        const unsubscribers: Unsubscribe[] = []
+        unsubscribers.push(this.getFirebaseListener(queues.public, `/projects/${projectId}/classes/${config.classId}/instances`, config.instanceId!))
+        unsubscribers.push(this.getFirebaseListener(queues.user, `/projects/${projectId}/classes/${config.classId}/instances/${config.instanceId}/userState`, user!.userId!))
+        unsubscribers.push(this.getFirebaseListener(queues.role, `/projects/${projectId}/classes/${config.classId}/instances/${config.instanceId}/roleState`, user!.identity!))
+
+        return { state, unsubscribers }
+    }
+
+    public async getCloudObject(config: RetterCloudObjectConfig): Promise<RetterCloudObject> {
         if (!this.initialized) throw new Error('Retter SDK not initialized.')
 
-        const instance = await this.sendToActionQueue<any>({ action: RetterActions.COS_INSTANCE, data: config })
-        config.instanceId = instance.instanceId
-
         if (config.useLocal && config.instanceId) {
+            const { state } = await this.getFirebaseState(config)
+
             return {
                 call: async <T>(params: RetterCloudObjectCall): Promise<RetterCallResponse<T>> => {
                     return await this.sendToActionQueue<RetterCallResponse<T>>({
@@ -328,13 +370,17 @@ export default class Retter {
                         data: { ...params, classId: config.classId, instanceId: config.instanceId },
                     })
                 },
+                state,
                 methods: [],
                 instanceId: config.instanceId!,
                 isNewInstance: false,
             }
         }
 
-        const seekedObject = this.cloudObjects.find(r => r.config.classId === config.classId && r.config.instanceId === r.instanceId)
+        const { data: instance } = await this.sendToActionQueue<any>({ action: RetterActions.COS_INSTANCE, data: config })
+        config.instanceId = instance.instanceId
+
+        const seekedObject = this.cloudObjects.find(r => r.config.classId === config.classId && r.config.instanceId === config.instanceId)
         if (seekedObject) {
             return {
                 call: seekedObject.call,
@@ -346,23 +392,7 @@ export default class Retter {
             }
         }
 
-        const roleQueue = new ReplaySubject(1)
-        const userQueue = new ReplaySubject(1)
-        const publicQueue = new ReplaySubject(1)
-
-        const state = {
-            role: roleQueue.asObservable(),
-            user: userQueue.asObservable(),
-            public: publicQueue.asObservable(),
-        }
-
-        const { projectId } = this.clientConfig!
-        const user = await this.auth!.getCurrentUser()
-
-        const unsubscribers: Unsubscribe[] = []
-        unsubscribers.push(this.getFirebaseListener(publicQueue, `/projects/${projectId}/classes/${config.classId}/instances`, config.instanceId!))
-        unsubscribers.push(this.getFirebaseListener(userQueue, `/projects/${projectId}/classes/${config.classId}/instances/${config.instanceId}/userState`, user!.userId!))
-        unsubscribers.push(this.getFirebaseListener(roleQueue, `/projects/${projectId}/classes/${config.classId}/instances/${config.instanceId}/roleState`, user!.identity!))
+        const { state, unsubscribers } = await this.getFirebaseState(config)
 
         const call = async <T>(params: RetterCloudObjectCall): Promise<RetterCallResponse<T>> => {
             return await this.sendToActionQueue<RetterCallResponse<T>>({

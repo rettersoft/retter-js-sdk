@@ -10,6 +10,8 @@ export default class Auth {
 
     private clientConfig?: RetterClientConfig
 
+    private rootProjectId?: string
+
     private tokenStorageKey?: string
 
     private currentTokenData?: RetterTokenData
@@ -17,6 +19,8 @@ export default class Auth {
     constructor(config: RetterClientConfig) {
         this.clientConfig = config
         this.tokenStorageKey = `RBS_TOKENS_KEY.${config.projectId}`
+
+        this.rootProjectId = config.rootProjectId ?? 'root'
     }
 
     public setHttp(http: RetterRequest) {
@@ -46,17 +50,26 @@ export default class Auth {
         this.currentTokenData = undefined
     }
 
-    public async getCurrentTokenData(): Promise<RetterTokenData | undefined> {
+    public async getCurrentTokenData(decoded: boolean = false): Promise<RetterTokenData | undefined> {
+        let data: RetterTokenData | undefined
         const runtime = getRuntime()
         if (runtime === 'web') {
-            const data = localStorage.getItem(this.tokenStorageKey!)
-            if (data) return JSON.parse(data)
+            const item = localStorage.getItem(this.tokenStorageKey!)
+            if (item) data = JSON.parse(item)
+        } else if (runtime === 'react-native') {
+            const item = await AsyncStorage.getItem(this.tokenStorageKey!)
+            if (item) data = JSON.parse(item)
+        } else {
+            data = this.currentTokenData
         }
-        if (runtime === 'react-native') {
-            const data = await AsyncStorage.getItem(this.tokenStorageKey!)
-            if (data) return JSON.parse(data)
+
+        if (!decoded) return data
+        if (data) {
+            data.accessTokenDecoded = this.decodeToken(data.accessToken)
+            data.refreshTokenDecoded = this.decodeToken(data.refreshToken)
         }
-        return this.currentTokenData
+
+        return data
     }
 
     public async getCurrentUser(): Promise<RetterTokenPayload | undefined> {
@@ -80,6 +93,9 @@ export default class Auth {
             if (refreshTokenExpiresAt > now && accessTokenExpiresAt <= now) {
                 const freshTokenData = await this.getFreshToken(tokenData.refreshToken, tokenData.refreshTokenDecoded.userId!)
 
+                freshTokenData.accessTokenDecoded = this.decodeToken(freshTokenData.accessToken)
+                freshTokenData.refreshTokenDecoded = this.decodeToken(freshTokenData.refreshToken)
+
                 return freshTokenData
             }
 
@@ -101,17 +117,18 @@ export default class Auth {
     protected async getFreshToken(refreshToken: string, userId: string): Promise<RetterTokenData> {
         const path = `/CALL/ProjectUser/refreshToken/${this.clientConfig!.projectId}_${userId}`
 
-        return await this.http!.call<RetterTokenData>('root', path, { method: 'get', params: { refreshToken } })
+        const response = await this.http!.call<RetterTokenData>(this.rootProjectId!, path, { method: 'get', params: { refreshToken } })
+        return response.data
     }
 
     protected async getAnonymousToken(): Promise<RetterTokenData> {
         const path = `/INSTANCE/ProjectUser`
-        const data = await this.http!.call<{ response: RetterTokenData }>('root', path, {
+        const response = await this.http!.call<{ response: RetterTokenData }>(this.rootProjectId!, path, {
             method: 'get',
             params: { projectId: this.clientConfig!.projectId },
         })
 
-        return data.response
+        return response.data.response
     }
 
     // Remote Request
@@ -119,7 +136,7 @@ export default class Auth {
         const userId = this.decodeToken(token).userId!
         const path = `/CALL/ProjectUser/authWithCustomToken/${this.clientConfig!.projectId}_${userId}`
 
-        const tokenData = await this.http!.call<RetterTokenData>('root', path, { method: 'get', params: { customToken: token } })
+        const { data: tokenData } = await this.http!.call<RetterTokenData>(this.rootProjectId!, path, { method: 'get', params: { customToken: token } })
         tokenData.accessTokenDecoded = this.decodeToken(tokenData.accessToken)
         tokenData.refreshTokenDecoded = this.decodeToken(tokenData.refreshToken)
 
@@ -132,7 +149,7 @@ export default class Auth {
             if (tokenData) {
                 const path = `/CALL/ProjectUser/signOut/${this.clientConfig!.projectId}_${tokenData.accessTokenDecoded!.userId}`
 
-                await this.http!.call('root', path, { method: 'get' })
+                await this.http!.call(this.rootProjectId!, path, { method: 'get' })
             }
         } catch (error) {}
     }

@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosRequestConfig } from 'axios'
+import axios, { AxiosInstance, AxiosResponse } from 'axios'
 
 import { RetterClientConfig, RetterRegion, RetterRegionConfig } from './types'
 
@@ -39,12 +39,11 @@ export default class Request {
         return url
     }
 
-    public async call<T>(projectId: string, path: string, params?: any): Promise<T> {
+    public async call<T>(projectId: string, path: string, params?: any): Promise<AxiosResponse<T>> {
         try {
             const response = await this.axiosInstance!({ url: this.buildUrl(projectId, path), ...params })
-            return response.data
+            return response
         } catch (error: any) {
-            console.log(error.response ?? error)
             throw error
         }
     }

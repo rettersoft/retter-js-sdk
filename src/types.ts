@@ -5,6 +5,7 @@ import { Unsubscribe } from '@firebase/util'
 // Config
 export interface RetterClientConfig {
     projectId: string
+    rootProjectId?: string
     region?: RetterRegion
     platform?: string
     [key: string]: any
@@ -103,17 +104,17 @@ export interface RetterCloudObjectConfig {
     token?: string
 }
 
-export interface RetterCloudObject<T> {
+export interface RetterCloudObject {
     instanceId: string
     isNewInstance: boolean
     methods: RetterCloudObjectMethod[]
     response?: any
-    call(params: RetterCloudObjectCall): Promise<RetterCallResponse<T>>
+    call<T>(params: RetterCloudObjectCall): Promise<RetterCallResponse<T>>
     getState(params?: RetterCloudObjectRequest): Promise<RetterCallResponse<RetterCloudObjectState>>
     state?: RetterCloudObjectStates
 }
 
-export interface RetterCloudObjectItem extends RetterCloudObject<any> {
+export interface RetterCloudObjectItem extends RetterCloudObject {
     config: RetterCloudObjectConfig
     unsubscribers: Unsubscribe[]
 }
@@ -134,7 +135,7 @@ export interface RetterCloudObjectState {
     private: { [key: string]: any }
 }
 
-export type RetterCloudObjectRequest = Omit<RetterClientConfig, 'classId' | 'useLocal'>
+export type RetterCloudObjectRequest = Omit<RetterCloudObjectConfig, 'classId' | 'useLocal'>
 
 export interface RetterCloudObjectCall extends RetterCloudObjectRequest {
     method: string
