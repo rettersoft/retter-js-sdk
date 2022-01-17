@@ -87,6 +87,9 @@ export interface RetterTokenPayload {
     identity?: string
     iat?: number
     exp?: number
+    claims?: {
+        [key: string]: any
+    }
 }
 
 // Cloud Objects

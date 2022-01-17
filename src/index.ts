@@ -22,6 +22,7 @@ import {
     RetterCloudObjectItem,
     RetterCloudObjectRequest,
     RetterCloudObjectState,
+    RetterTokenPayload,
 } from './types'
 
 export * from './types'
@@ -114,7 +115,7 @@ export default class Retter {
                     }
                     this.fireAuthStatus(ev)
                     return ev
-                }),
+                })
             )
             .subscribe(ev => {
                 if (ev.action?.resolve) {
@@ -262,7 +263,7 @@ export default class Retter {
             params: queryParams,
             method: data.httpMethod ?? 'post',
             data: data.body,
-            headers: { ...data.headers, accept: 'text/plain', 'Content-Type': 'text/plain' },
+            headers: { ...data.headers },
         }
 
         if (action.action === RetterActions.COS_INSTANCE) {
@@ -325,6 +326,10 @@ export default class Retter {
 
         // dont wait for sign out to finish
         this.auth!.signOut()
+    }
+
+    public async getCurrentUser(): Promise<RetterTokenPayload | undefined> {
+        return await this.auth!.getCurrentUser(true)
     }
 
     protected async getFirebaseState(config: RetterCloudObjectConfig) {

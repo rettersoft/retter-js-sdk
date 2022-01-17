@@ -55,10 +55,10 @@ export default class Auth {
         const runtime = getRuntime()
         if (runtime === 'web') {
             const item = localStorage.getItem(this.tokenStorageKey!)
-            if (item) data = JSON.parse(item)
+            if (item && item !== 'undefined') data = JSON.parse(item)
         } else if (runtime === 'react-native') {
             const item = await AsyncStorage.getItem(this.tokenStorageKey!)
-            if (item) data = JSON.parse(item)
+            if (item && item !== 'undefined') data = JSON.parse(item)
         } else {
             data = this.currentTokenData
         }
@@ -72,10 +72,9 @@ export default class Auth {
         return data
     }
 
-    public async getCurrentUser(): Promise<RetterTokenPayload | undefined> {
-        const tokenData = await this.getCurrentTokenData()
-        if (tokenData) return this.decodeToken(tokenData.accessToken)
-        return undefined
+    public async getCurrentUser(force: boolean = false): Promise<RetterTokenPayload | undefined> {
+        const tokenData = force ? await this.getTokenData() : await this.getCurrentTokenData(true)
+        return tokenData?.accessTokenDecoded
     }
 
     public async getTokenData(): Promise<RetterTokenData | undefined> {
