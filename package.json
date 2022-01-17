@@ -1,6 +1,6 @@
 {
     "name": "@retter/sdk",
-    "version": "0.2.24",
+    "version": "0.2.25",
     "description": "Client sdk for retter.io",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -19,6 +19,7 @@
     "license": "ISC",
     "dependencies": {
         "@react-native-async-storage/async-storage": "^1.15.14",
+        "@types/json-schema": "^7.0.9",
         "@types/node": "^17.0.8",
         "axios": "^0.24.0",
         "firebase": "^9.6.2",

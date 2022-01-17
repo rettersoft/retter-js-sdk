@@ -1,5 +1,6 @@
 import { Observable } from 'rxjs'
 import { AxiosResponse } from 'axios'
+import { JSONSchema7 } from 'json-schema'
 import { Unsubscribe } from '@firebase/util'
 
 // Config
@@ -124,11 +125,18 @@ export interface RetterCloudObjectItem extends RetterCloudObject {
 
 export type RetterCallResponse<T> = Omit<AxiosResponse<T>, 'config' | 'request'>
 
+export interface RetterCloudObjectModel {
+    name: string
+    schema: JSONSchema7
+}
+
 export interface RetterCloudObjectMethod {
     tag?: string
     name: string
     sync?: boolean
     readonly?: boolean
+    inputModel?: RetterCloudObjectModel
+    outputModel?: RetterCloudObjectModel
 }
 
 export interface RetterCloudObjectState {
