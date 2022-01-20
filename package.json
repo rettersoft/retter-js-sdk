@@ -1,6 +1,6 @@
 {
     "name": "@retter/sdk",
-    "version": "0.2.25",
+    "version": "0.2.27",
     "description": "Client sdk for retter.io",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -8,7 +8,7 @@
         "dist"
     ],
     "repository": {
-        "type": "git",
+        "type": "git",  
         "url": "git+https://github.com/rettersoft/retter-js-sdk.git"
     },
     "bugs": {
@@ -19,7 +19,6 @@
     "license": "ISC",
     "dependencies": {
         "@react-native-async-storage/async-storage": "^1.15.14",
-        "@types/json-schema": "^7.0.9",
         "@types/node": "^17.0.8",
         "axios": "^0.24.0",
         "firebase": "^9.6.2",

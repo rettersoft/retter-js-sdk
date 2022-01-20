@@ -1,6 +1,5 @@
 import { Observable } from 'rxjs'
 import { AxiosResponse } from 'axios'
-import { JSONSchema7 } from 'json-schema'
 import { Unsubscribe } from '@firebase/util'
 
 // Config
@@ -103,7 +102,7 @@ export interface RetterCloudObjectConfig {
     headers?: { [key: string]: string }
     queryStringParams?: { [key: string]: string }
     httpMethod?: 'get' | 'delete' | 'post' | 'put'
-    body?: { [key: string]: any }
+    body?: any
     useLocal?: boolean
     token?: string
 }
@@ -125,18 +124,13 @@ export interface RetterCloudObjectItem extends RetterCloudObject {
 
 export type RetterCallResponse<T> = Omit<AxiosResponse<T>, 'config' | 'request'>
 
-export interface RetterCloudObjectModel {
-    name: string
-    schema: JSONSchema7
-}
-
 export interface RetterCloudObjectMethod {
     tag?: string
     name: string
     sync?: boolean
     readonly?: boolean
-    inputModel?: RetterCloudObjectModel
-    outputModel?: RetterCloudObjectModel
+    inputModel?: string
+    outputModel?: string
 }
 
 export interface RetterCloudObjectState {
