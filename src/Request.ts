@@ -43,7 +43,7 @@ export default class Request {
     }
 
     protected buildUrl(projectId: string, path: string) {
-        const url = `https://${projectId}.${this.region!.url}/${path}`
+        const url = `https://${projectId}.${this.region!.url}/${path.startsWith('/') ? path.substr(1) : path}`
 
         return url
     }
