@@ -268,8 +268,9 @@ export default class Retter {
 
         if (action.action === RetterActions.COS_INSTANCE) {
             const instanceId = data.key ? `${data.key.name}!${data.key.value}` : data.instanceId
+
             return {
-                path: `INSTANCE/${data.classId}${data.instanceId ? `/${instanceId}` : ''}`,
+                path: `INSTANCE/${data.classId}${instanceId ? `/${instanceId}` : ''}`,
                 params,
             }
         } else if (action.action === RetterActions.COS_STATE) {

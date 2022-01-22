@@ -16,6 +16,10 @@ const RetterRegions: RetterRegionConfig[] = [
 export default class Request {
     private region?: RetterRegionConfig
 
+    private culture?: string
+
+    private platform?: string
+
     private axiosInstance?: AxiosInstance
 
     constructor(config: RetterClientConfig) {
@@ -23,6 +27,9 @@ export default class Request {
 
         if (!config.region) config.region = RetterRegion.euWest1
         this.region = RetterRegions.find(region => region.id === config.region)
+
+        this.culture = config.culture
+        this.platform = config.culture
     }
 
     protected createAxiosInstance() {
@@ -43,7 +50,11 @@ export default class Request {
 
     public async call<T>(projectId: string, path: string, params?: any): Promise<AxiosResponse<T>> {
         try {
-            const response = await this.axiosInstance!({ url: this.buildUrl(projectId, path), ...params })
+            const queryStringParams = { ...params.params }
+            if (this.culture) queryStringParams.__culture = this.culture
+            if (this.platform) queryStringParams.__platform = this.platform
+
+            const response = await this.axiosInstance!({ url: this.buildUrl(projectId, path), ...params, params: queryStringParams })
             return response
         } catch (error: any) {
             throw error
