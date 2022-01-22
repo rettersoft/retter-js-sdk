@@ -7,7 +7,6 @@ export interface RetterClientConfig {
     projectId: string
     rootProjectId?: string
     region?: RetterRegion
-    platform?: string
     [key: string]: any
 }
 

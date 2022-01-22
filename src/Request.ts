@@ -20,6 +20,8 @@ export default class Request {
 
     constructor(config: RetterClientConfig) {
         this.createAxiosInstance()
+
+        if (!config.region) config.region = RetterRegion.euWest1
         this.region = RetterRegions.find(region => region.id === config.region)
     }
 
