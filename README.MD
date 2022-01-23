@@ -17,6 +17,7 @@ Using unkpg:
 ```html
 <script src="https://unpkg.com/@retter/sdk/bundle/index.js"></script>
 ```
+> You can use global `Retter` keyword.
 
 ## Usage
 
@@ -25,12 +26,26 @@ Using unkpg:
 Clients should initialize with project id. Instances with same project id always be cached.
 
 ```ts
-const rio = Retter.getInstance({
-    projectId: '{PROJECT_ID}',
-})
+import Retter from '@retter/sdk'
+
+const rio = Retter.getInstance(config: RetterClientConfig)
+
+interface RetterClientConfig {
+    projectId: string
+    rootProjectId?: string
+    region?: RetterRegion
+    platform?: string
+    culture?: string
+}
 ```
 
-**PROJECT_ID**: Unique id of a project created in [retter.io Console](https://retter.io)
+> **projectId**: Unique id of a project created in [retter.io Console](https://retter.io)
+>
+> **region**: Could be `euWest1` or `euWest1Beta`
+>
+> **platform**: web, react-native, vs...
+> 
+> **culture**: tr, en-US, vs....
 
 ### Authentication
 
