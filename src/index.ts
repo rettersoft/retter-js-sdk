@@ -79,7 +79,7 @@ export default class Retter {
         this.processActionQueue()
 
         setTimeout(async () => {
-            const tokenData = await this.auth!.getCurrentTokenData(true)
+            const tokenData = await this.auth!.getCurrentTokenData()
             this.fireAuthStatus({ tokenData })
         }, 1)
     }
@@ -298,6 +298,30 @@ export default class Retter {
         })
     }
 
+    protected async getFirebaseState(config: RetterCloudObjectConfig) {
+        const queues = {
+            role: new ReplaySubject(1),
+            user: new ReplaySubject(1),
+            public: new ReplaySubject(1),
+        }
+
+        const state = {
+            role: queues.role.asObservable(),
+            user: queues.user.asObservable(),
+            public: queues.public.asObservable(),
+        }
+
+        const { projectId } = this.clientConfig!
+        const user = await this.auth!.getCurrentUser()
+
+        const unsubscribers: Unsubscribe[] = []
+        unsubscribers.push(this.getFirebaseListener(queues.public, `/projects/${projectId}/classes/${config.classId}/instances`, config.instanceId!))
+        unsubscribers.push(this.getFirebaseListener(queues.user, `/projects/${projectId}/classes/${config.classId}/instances/${config.instanceId}/userState`, user!.userId!))
+        unsubscribers.push(this.getFirebaseListener(queues.role, `/projects/${projectId}/classes/${config.classId}/instances/${config.instanceId}/roleState`, user!.identity!))
+
+        return { state, unsubscribers }
+    }
+
     protected async clearCloudObjects() {
         this.cloudObjects.map(i => i.unsubscribers.map(u => u()))
         this.cloudObjects = []
@@ -325,36 +349,12 @@ export default class Retter {
         // Fire auth status after all tokens cleared
         this.fireAuthStatus({})
 
-        // dont wait for sign out to finish
+        // dont wait for sign out request to finish
         this.auth!.signOut()
     }
 
     public async getCurrentUser(): Promise<RetterTokenPayload | undefined> {
-        return await this.auth!.getCurrentUser(true)
-    }
-
-    protected async getFirebaseState(config: RetterCloudObjectConfig) {
-        const queues = {
-            role: new ReplaySubject(1),
-            user: new ReplaySubject(1),
-            public: new ReplaySubject(1),
-        }
-
-        const state = {
-            role: queues.role.asObservable(),
-            user: queues.user.asObservable(),
-            public: queues.public.asObservable(),
-        }
-
-        const { projectId } = this.clientConfig!
-        const user = await this.auth!.getCurrentUser()
-
-        const unsubscribers: Unsubscribe[] = []
-        unsubscribers.push(this.getFirebaseListener(queues.public, `/projects/${projectId}/classes/${config.classId}/instances`, config.instanceId!))
-        unsubscribers.push(this.getFirebaseListener(queues.user, `/projects/${projectId}/classes/${config.classId}/instances/${config.instanceId}/userState`, user!.userId!))
-        unsubscribers.push(this.getFirebaseListener(queues.role, `/projects/${projectId}/classes/${config.classId}/instances/${config.instanceId}/roleState`, user!.identity!))
-
-        return { state, unsubscribers }
+        return await this.auth!.getCurrentUser()
     }
 
     public async getCloudObject(config: RetterCloudObjectConfig): Promise<RetterCloudObject> {

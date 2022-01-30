@@ -1,6 +1,6 @@
 {
     "name": "@retter/sdk",
-    "version": "0.2.31",
+    "version": "0.2.35",
     "description": "Client sdk for retter.io",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
