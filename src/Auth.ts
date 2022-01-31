@@ -24,7 +24,7 @@ export default class Auth {
 
     constructor(config: RetterClientConfig) {
         this.clientConfig = config
-        this.tokenStorageKey = `RBS_TOKENS_KEY.${config.projectId}`
+        this.tokenStorageKey = `RIO_TOKENS_KEY.${config.projectId}`
 
         this.rootProjectId = config.rootProjectId ?? 'root'
     }
