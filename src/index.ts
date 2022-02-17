@@ -259,6 +259,9 @@ export default class Retter {
             queryParams[key] = data.queryStringParams![key]
         }
 
+        queryParams['__culture'] = data.culture ?? 'en_us'
+        if (data.platform) queryParams['__platform'] = data.platform
+
         const params = {
             params: queryParams,
             method: data.httpMethod ?? 'post',

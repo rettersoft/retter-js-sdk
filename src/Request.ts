@@ -51,8 +51,8 @@ export default class Request {
     public async call<T>(projectId: string, path: string, params?: any): Promise<AxiosResponse<T>> {
         try {
             const queryStringParams = { ...params.params }
-            if (this.culture) queryStringParams.__culture = this.culture
-            if (this.platform) queryStringParams.__platform = this.platform
+            if (!queryStringParams.__culture && this.culture) queryStringParams.__culture = this.culture
+            if (!queryStringParams.__platform && this.platform) queryStringParams.__platform = this.platform
 
             const response = await this.axiosInstance!({ url: this.buildUrl(projectId, path), ...params, params: queryStringParams })
             return response

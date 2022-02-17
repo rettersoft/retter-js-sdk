@@ -105,6 +105,8 @@ export interface RetterCloudObjectConfig {
     queryStringParams?: { [key: string]: string }
     httpMethod?: 'get' | 'delete' | 'post' | 'put'
     body?: any
+    platform?: string
+    culture?: string
     useLocal?: boolean
     token?: string
 }
