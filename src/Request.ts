@@ -5,11 +5,11 @@ import { RetterClientConfig, RetterRegion, RetterRegionConfig } from './types'
 const RetterRegions: RetterRegionConfig[] = [
     {
         id: RetterRegion.euWest1,
-        url: 'api.rtbs.io',
+        url: 'api.retter.io',
     },
     {
         id: RetterRegion.euWest1Beta,
-        url: 'test-api.rtbs.io',
+        url: 'test-api.retter.io',
     },
 ]
 
@@ -43,7 +43,7 @@ export default class Request {
     }
 
     protected buildUrl(projectId: string, path: string) {
-        const url = `https://${projectId}.${this.region!.url}/${path.startsWith('/') ? path.substr(1) : path}`
+        const url = `https://${projectId}.${this.region!.url}/${projectId}/${path.startsWith('/') ? path.substr(1) : path}`
 
         return url
     }
