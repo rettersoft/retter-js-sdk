@@ -281,6 +281,11 @@ export default class Retter {
                 path: `STATE/${data.classId}/${data.instanceId}`,
                 params,
             }
+        } else if (action.action === RetterActions.COS_LIST) {
+            return {
+                path: `LIST/${data.classId}`,
+                params,
+            }
         } else {
             return {
                 path: `CALL/${data.classId}/${data.method}/${data.instanceId}`,
@@ -373,6 +378,14 @@ export default class Retter {
                         data: { ...params, classId: config.classId, instanceId: config.instanceId },
                     })
                 },
+                listInstances: async (params?: RetterCloudObjectRequest): Promise<string[]> => {
+                    const { data } = await this.sendToActionQueue<RetterCallResponse<{ instanceIds: string[] }>>({
+                        action: RetterActions.COS_LIST,
+                        data: { ...params, classId: config.classId },
+                    })
+
+                    return data.instanceIds
+                },
                 getState: async (params?: RetterCloudObjectRequest): Promise<RetterCallResponse<RetterCloudObjectState>> => {
                     return await this.sendToActionQueue<RetterCallResponse<RetterCloudObjectState>>({
                         action: RetterActions.COS_STATE,
@@ -394,6 +407,7 @@ export default class Retter {
             return {
                 call: seekedObject.call,
                 state: seekedObject.state,
+                listInstances: seekedObject.listInstances,
                 getState: seekedObject.getState,
                 methods: instance.methods,
                 instanceId: config.instanceId!,
@@ -417,10 +431,20 @@ export default class Retter {
             })
         }
 
+        const listInstances = async (params?: RetterCloudObjectRequest): Promise<string[]> => {
+            const { data } = await this.sendToActionQueue<RetterCallResponse<{ instanceIds: string[] }>>({
+                action: RetterActions.COS_LIST,
+                data: { ...params, classId: config.classId },
+            })
+
+            return data.instanceIds
+        }
+
         const retVal = {
             call,
             state,
             getState,
+            listInstances,
             methods: instance.methods,
             instanceId: config.instanceId!,
             isNewInstance: instance.isNewInstance ?? false,

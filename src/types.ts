@@ -30,6 +30,7 @@ export enum RetterActions {
     COS_CALL = 'COS_CALL',
     COS_STATE = 'COS_STATE',
     COS_INSTANCE = 'COS_INSTANCE',
+    COS_LIST = 'COS_LIST',
 }
 
 export interface RetterActionWrapper {
@@ -117,6 +118,7 @@ export interface RetterCloudObject {
     methods: RetterCloudObjectMethod[]
     response?: any
     call<T>(params: RetterCloudObjectCall): Promise<RetterCallResponse<T>>
+    listInstances(params?: RetterCloudObjectRequest): Promise<string[]>
     getState(params?: RetterCloudObjectRequest): Promise<RetterCallResponse<RetterCloudObjectState>>
     state?: RetterCloudObjectStates
 }

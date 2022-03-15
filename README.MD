@@ -192,3 +192,9 @@ interface RetterCloudObjectMethod {
     outputModel?: string
 }
 ```
+
+### Instance List
+
+```ts
+const instanceIds = await cloudObject.listInstances()
+```
