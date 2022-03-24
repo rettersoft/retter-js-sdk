@@ -400,6 +400,7 @@ export default class Retter {
         }
 
         const { data: instance } = await this.sendToActionQueue<any>({ action: RetterActions.COS_INSTANCE, data: config })
+
         config.instanceId = instance.instanceId
 
         const seekedObject = this.cloudObjects.find(r => r.config.classId === config.classId && r.config.instanceId === config.instanceId)
@@ -411,6 +412,7 @@ export default class Retter {
                 getState: seekedObject.getState,
                 methods: instance.methods,
                 instanceId: config.instanceId!,
+                response: seekedObject.response,
                 isNewInstance: false,
             }
         }
@@ -446,6 +448,7 @@ export default class Retter {
             getState,
             listInstances,
             methods: instance.methods,
+            response: instance.response,
             instanceId: config.instanceId!,
             isNewInstance: instance.isNewInstance ?? false,
         }
