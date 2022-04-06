@@ -44,7 +44,7 @@ export default class Auth {
      */
     public async storeTokenData(tokenData: RetterTokenData | string) {
         const runtime = getRuntime()
-        if (tokenData === 'undefined') return
+        if (typeof tokenData === 'undefined') return
         if (runtime === 'web') {
             localStorage.setItem(this.tokenStorageKey!, JSON.stringify(tokenData))
         }

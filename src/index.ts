@@ -27,6 +27,10 @@ import {
 
 export * from './types'
 
+const DEFAULT_RETRY_DELAY = 50 // in ms
+const DEFAULT_RETRY_COUNT = 3
+const DEFAULT_RETRY_RATE = 1.5
+
 export default class Retter {
     private static instances: Retter[] = []
 
@@ -68,6 +72,12 @@ export default class Retter {
     protected init(config: RetterClientConfig) {
         if (this.initialized) throw new Error('SDK already initialized.')
         this.initialized = true
+
+        if (!config.retryConfig) config.retryConfig = {}
+        if (!config.retryConfig.delay) config.retryConfig.delay = DEFAULT_RETRY_DELAY
+        if (!config.retryConfig.count) config.retryConfig.count = DEFAULT_RETRY_COUNT
+        if (!config.retryConfig.rate) config.retryConfig.rate = DEFAULT_RETRY_RATE
+
         this.clientConfig = config
 
         this.auth! = new RetterAuth(config)
@@ -420,10 +430,22 @@ export default class Retter {
         const { state, unsubscribers } = await this.getFirebaseState(config)
 
         const call = async <T>(params: RetterCloudObjectCall): Promise<RetterCallResponse<T>> => {
-            return await this.sendToActionQueue<RetterCallResponse<T>>({
-                action: RetterActions.COS_CALL,
-                data: { ...params, classId: config.classId, instanceId: config.instanceId },
-            })
+            params.retryConfig = { ...this.clientConfig!.retryConfig, ...params.retryConfig }
+            try {
+                return await this.sendToActionQueue<RetterCallResponse<T>>({
+                    action: RetterActions.COS_CALL,
+                    data: { ...params, classId: config.classId, instanceId: config.instanceId },
+                })
+            } catch (error: any) {
+                --params.retryConfig.count!
+                params.retryConfig.delay! *= params.retryConfig.rate!
+                if (error.response && error.response.status === 570 && params.retryConfig.count! > 0) {
+                    await new Promise(r => setTimeout(r, params.retryConfig!.delay!))
+                    return await call(params)
+                } else {
+                    throw error
+                }
+            }
         }
 
         const getState = async (params?: RetterCloudObjectRequest): Promise<RetterCallResponse<RetterCloudObjectState>> => {

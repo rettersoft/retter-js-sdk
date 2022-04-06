@@ -9,7 +9,14 @@ export interface RetterClientConfig {
     region?: RetterRegion
     platform?: string
     culture?: string
+    retryConfig?: RetterRetryConfig
     [key: string]: any
+}
+
+export interface RetterRetryConfig {
+    delay?: number
+    count?: number
+    rate?: number
 }
 
 export enum RetterRegion {
@@ -150,6 +157,7 @@ export type RetterCloudObjectRequest = Omit<RetterCloudObjectConfig, 'classId' |
 
 export interface RetterCloudObjectCall extends RetterCloudObjectRequest {
     method: string
+    retryConfig?: RetterRetryConfig
 }
 
 interface RetterCloudObjectStates {
