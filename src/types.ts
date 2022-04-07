@@ -144,6 +144,7 @@ export interface RetterCloudObjectMethod {
     readonly?: boolean
     inputModel?: string
     outputModel?: string
+    queryStringModel?: string
 }
 
 export interface RetterCloudObjectState {
