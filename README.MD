@@ -17,6 +17,7 @@ Using unkpg:
 ```html
 <script src="https://unpkg.com/@retter/sdk/bundle/index.js"></script>
 ```
+
 > You can use global `Retter` keyword.
 
 ## Usage
@@ -44,7 +45,7 @@ interface RetterClientConfig {
 > **region**: Could be `euWest1` or `euWest1Beta`
 >
 > **platform**: web, react-native, vs...
-> 
+>
 > **culture**: tr, en-US, vs....
 
 ### Authentication
@@ -108,6 +109,7 @@ interface RetterCloudObjectConfig {
         [key: string]: any
     }
     httpMethod?: 'get' | 'delete' | 'post' | 'put'
+    base64Encode?: boolean // default: true, only get requests
 }
 ```
 
@@ -147,7 +149,13 @@ interface RetterCloudObjectCall {
     body?: {
         [key: string]: any
     }
-    httpMethod?: 'get' | 'delete' | 'post' | 'put'
+    httpMethod?: 'get' | 'delete' | 'post' | 'put' // default: post
+    base64Encode?: boolean // default: true, only get requests
+    retryConfig: {
+        delay?: number // 50ms
+        count?: number // 3
+        rate?: number // 1.5
+    }
 }
 ```
 

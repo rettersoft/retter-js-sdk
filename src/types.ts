@@ -112,6 +112,7 @@ export interface RetterCloudObjectConfig {
     headers?: { [key: string]: string }
     queryStringParams?: { [key: string]: string }
     httpMethod?: 'get' | 'delete' | 'post' | 'put'
+    base64Encode?: boolean
     body?: any
     platform?: string
     culture?: string

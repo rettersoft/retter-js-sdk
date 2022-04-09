@@ -246,7 +246,7 @@ export default class Retter {
         this.firestore = getFirestore(this.firebase!)
         this.firebaseAuth = getAuth(this.firebase!)
 
-        const fireUser = await signInWithCustomToken(this.firebaseAuth!, firebaseConfig.customToken)
+        await signInWithCustomToken(this.firebaseAuth!, firebaseConfig.customToken)
 
         return actionWrapper
     }
@@ -276,6 +276,7 @@ export default class Retter {
             params: queryParams,
             method: data.httpMethod ?? 'post',
             data: data.body,
+            base64Encode: data.base64Encode ?? true,
             headers: { ...data.headers },
         }
 
