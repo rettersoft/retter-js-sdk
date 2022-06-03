@@ -169,3 +169,8 @@ interface RetterCloudObjectStates {
     user: Observable<any>
     public: Observable<any>
 }
+
+export enum Runtime {
+    web = 'web',
+    node = 'node',
+}

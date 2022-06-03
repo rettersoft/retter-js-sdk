@@ -44,7 +44,7 @@ interface RetterClientConfig {
 >
 > **region**: Could be `euWest1` or `euWest1Beta`
 >
-> **platform**: web, react-native, vs...
+> **platform**: web, node
 >
 > **culture**: tr, en-US, vs....
 

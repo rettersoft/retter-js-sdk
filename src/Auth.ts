@@ -1,9 +1,8 @@
 import jwt from 'jwt-decode'
-import AsyncStorage from '@react-native-async-storage/async-storage'
 
-import { getRuntime } from './helpers'
 import RetterRequest from './Request'
-import { RetterAuthChangedEvent, RetterAuthStatus, RetterClientConfig, RetterTokenData, RetterTokenPayload } from './types'
+import { getRuntime } from './helpers'
+import { RetterAuthChangedEvent, RetterAuthStatus, RetterClientConfig, RetterTokenData, RetterTokenPayload, Runtime } from './types'
 
 export default class Auth {
     /**
@@ -18,7 +17,7 @@ export default class Auth {
     private tokenStorageKey?: string
 
     /**
-     * It is used when sdk not used with browser or react native.
+     * It is used when sdk not used with browser.
      */
     private currentTokenData?: RetterTokenData
 
@@ -36,7 +35,6 @@ export default class Auth {
     /**
      * Stores the token data in the platforms storage.
      * For web, it uses localStorage.
-     * For react-native, it uses AsyncStorage.
      * For node or other platforms, it uses the currentTokenData property.
      *
      * @param tokenData
@@ -45,11 +43,8 @@ export default class Auth {
     public async storeTokenData(tokenData: RetterTokenData | string) {
         const runtime = getRuntime()
         if (typeof tokenData === 'undefined') return
-        if (runtime === 'web') {
+        if (runtime === Runtime.web) {
             localStorage.setItem(this.tokenStorageKey!, JSON.stringify(tokenData))
-        }
-        if (runtime === 'react-native') {
-            await AsyncStorage.setItem(this.tokenStorageKey!, JSON.stringify(tokenData))
         }
         this.currentTokenData = tokenData as RetterTokenData
     }
@@ -61,11 +56,8 @@ export default class Auth {
      */
     public async clearTokenData(): Promise<void> {
         const runtime = getRuntime()
-        if (runtime === 'web') {
+        if (runtime === Runtime.web) {
             localStorage.removeItem(this.tokenStorageKey!)
-        }
-        if (runtime === 'react-native') {
-            await AsyncStorage.removeItem(this.tokenStorageKey!)
         }
         this.currentTokenData = undefined
     }
@@ -78,11 +70,8 @@ export default class Auth {
     public async getCurrentTokenData(): Promise<RetterTokenData | undefined> {
         let data: RetterTokenData | undefined
         const runtime = getRuntime()
-        if (runtime === 'web') {
+        if (runtime === Runtime.web) {
             const item = localStorage.getItem(this.tokenStorageKey!)
-            if (item && item !== 'undefined') data = JSON.parse(item)
-        } else if (runtime === 'react-native') {
-            const item = await AsyncStorage.getItem(this.tokenStorageKey!)
             if (item && item !== 'undefined') data = JSON.parse(item)
         } else {
             data = this.currentTokenData
@@ -104,6 +93,7 @@ export default class Auth {
      */
     public async getCurrentUser(): Promise<RetterTokenPayload | undefined> {
         const tokenData = await this.getCurrentTokenData()
+
         return tokenData?.accessTokenDecoded
     }
 
@@ -178,8 +168,8 @@ export default class Auth {
      */
     protected async getFreshToken(refreshToken: string, userId: string): Promise<RetterTokenData> {
         const path = `/CALL/ProjectUser/refreshToken/${this.clientConfig!.projectId}_${userId}`
-
         const response = await this.http!.call<RetterTokenData>(this.rootProjectId!, path, { method: 'get', params: { refreshToken } })
+
         return this.formatTokenData(response.data)
     }
 
