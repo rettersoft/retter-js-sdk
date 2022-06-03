@@ -5,3 +5,5 @@ test
 **/*.d.ts
 **/*.js
 **/*.js.map
+
+!webpack.config.js

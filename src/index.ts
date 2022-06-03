@@ -198,7 +198,7 @@ export default class Retter {
             await this.initFirebase(ev)
             return ev
         } catch (error: any) {
-            this.signOut()
+            await this.signOut()
             return { action }
         }
     }
@@ -214,6 +214,10 @@ export default class Retter {
     }
 
     protected processAction(actionWrapper: RetterActionWrapper): Observable<Notification<RetterActionWrapper>> {
+        if (actionWrapper.action?.action === RetterActions.EMPTY) {
+            return defer(() => of({ ...actionWrapper, response: true })).pipe(materialize())
+        }
+
         if (actionWrapper.action?.action === RetterActions.SIGN_IN_ANONYM) {
             return defer(() => of({ ...actionWrapper, response: this.auth!.getAuthStatus(actionWrapper.tokenData) })).pipe(materialize())
         }
@@ -362,14 +366,14 @@ export default class Retter {
 
     public async signOut(): Promise<void> {
         if (!this.initialized) throw new Error('Retter SDK not initialized.')
-
+        
         await this.clearCloudObjects()
+
+        await this.auth!.signOut()
         await this.auth!.clearTokenData()
+
         // Fire auth status after all tokens cleared
         this.fireAuthStatus({})
-
-        // dont wait for sign out request to finish
-        this.auth!.signOut()
     }
 
     public async getCurrentUser(): Promise<RetterTokenPayload | undefined> {
@@ -379,40 +383,14 @@ export default class Retter {
     public async getCloudObject(config: RetterCloudObjectConfig): Promise<RetterCloudObject> {
         if (!this.initialized) throw new Error('Retter SDK not initialized.')
 
-        if (config.useLocal && config.instanceId) {
-            const { state } = await this.getFirebaseState(config)
-
-            return {
-                call: async <T>(params: RetterCloudObjectCall): Promise<RetterCallResponse<T>> => {
-                    return await this.sendToActionQueue<RetterCallResponse<T>>({
-                        action: RetterActions.COS_CALL,
-                        data: { ...params, classId: config.classId, instanceId: config.instanceId },
-                    })
-                },
-                listInstances: async (params?: RetterCloudObjectRequest): Promise<string[]> => {
-                    const { data } = await this.sendToActionQueue<RetterCallResponse<{ instanceIds: string[] }>>({
-                        action: RetterActions.COS_LIST,
-                        data: { ...params, classId: config.classId },
-                    })
-
-                    return data.instanceIds
-                },
-                getState: async (params?: RetterCloudObjectRequest): Promise<RetterCallResponse<RetterCloudObjectState>> => {
-                    return await this.sendToActionQueue<RetterCallResponse<RetterCloudObjectState>>({
-                        action: RetterActions.COS_STATE,
-                        data: { ...params, classId: config.classId, instanceId: config.instanceId },
-                    })
-                },
-                state,
-                methods: [],
-                instanceId: config.instanceId!,
-                isNewInstance: false,
-            }
+        let instance
+        if (config.instanceId && config.useLocal) {
+            await this.sendToActionQueue({ action: RetterActions.EMPTY })
+        } else {
+            let { data } = await this.sendToActionQueue<any>({ action: RetterActions.COS_INSTANCE, data: config })
+            instance = data
+            config.instanceId = instance.instanceId
         }
-
-        const { data: instance } = await this.sendToActionQueue<any>({ action: RetterActions.COS_INSTANCE, data: config })
-
-        config.instanceId = instance.instanceId
 
         const seekedObject = this.cloudObjects.find(r => r.config.classId === config.classId && r.config.instanceId === config.instanceId)
         if (seekedObject) {
@@ -421,7 +399,7 @@ export default class Retter {
                 state: seekedObject.state,
                 listInstances: seekedObject.listInstances,
                 getState: seekedObject.getState,
-                methods: instance.methods,
+                methods: instance?.methods ?? [],
                 instanceId: config.instanceId!,
                 response: seekedObject.response,
                 isNewInstance: false,
@@ -470,10 +448,10 @@ export default class Retter {
             state,
             getState,
             listInstances,
-            methods: instance.methods,
-            response: instance.response,
+            methods: instance?.methods ?? [],
+            response: instance?.response ?? null,
             instanceId: config.instanceId!,
-            isNewInstance: instance.isNewInstance ?? false,
+            isNewInstance: instance?.isNewInstance ?? false,
         }
 
         this.cloudObjects.push({ ...retVal, config, unsubscribers })

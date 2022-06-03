@@ -15,6 +15,8 @@ const RetterRegions: RetterRegionConfig[] = [
 ]
 
 export default class Request {
+    private url?: string
+
     private region?: RetterRegionConfig
 
     private culture?: string
@@ -26,6 +28,7 @@ export default class Request {
     constructor(config: RetterClientConfig) {
         this.createAxiosInstance()
 
+        this.url = config.url
         if (!config.region) config.region = RetterRegion.euWest1
         this.region = RetterRegions.find(region => region.id === config.region)
 
@@ -44,9 +47,8 @@ export default class Request {
     }
 
     protected buildUrl(projectId: string, path: string) {
-        const url = `https://${projectId}.${this.region!.url}/${projectId}/${path.startsWith('/') ? path.substr(1) : path}`
-
-        return url
+        const prefix = this.url ? `${this.url}` : `${projectId}.${this.region!.url}`
+        return `https://${prefix}/${projectId}/${path.startsWith('/') ? path.substr(1) : path}`
     }
 
     public async call<T>(projectId: string, path: string, params?: any): Promise<AxiosResponse<T>> {

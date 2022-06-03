@@ -6,6 +6,7 @@ import { Unsubscribe } from '@firebase/util'
 export interface RetterClientConfig {
     projectId: string
     rootProjectId?: string
+    url?: string
     region?: RetterRegion
     platform?: string
     culture?: string
@@ -32,6 +33,7 @@ export interface RetterRegionConfig {
 // Actions
 
 export enum RetterActions {
+    EMPTY = 'EMPTY',
     SIGN_IN = 'SIGN_IN',
     SIGN_IN_ANONYM = 'SIGN_IN_ANONYM',
     COS_CALL = 'COS_CALL',

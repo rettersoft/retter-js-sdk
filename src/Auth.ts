@@ -222,9 +222,10 @@ export default class Auth {
     public async signOut(): Promise<void> {
         try {
             const tokenData = await this.getCurrentTokenData()
+            
             if (tokenData) {
                 const path = `/CALL/ProjectUser/signOut/${this.clientConfig!.projectId}_${tokenData.accessTokenDecoded!.userId}`
-
+                
                 await this.http!.call(this.rootProjectId!, path, { method: 'get', params: { accessToken: tokenData.accessToken } })
             }
         } catch (error) {}
