@@ -273,8 +273,10 @@ export default class Retter {
             queryParams[key] = data.queryStringParams![key]
         }
 
-        queryParams['__culture'] = data.culture ?? 'en-us'
-        if (data.platform) queryParams['__platform'] = data.platform
+        queryParams['__culture'] = data.culture ?? (this.clientConfig?.culture || 'en-us')
+        if (data.platform || this.clientConfig?.platform) {
+            queryParams['__platform'] = data.platform ?? this.clientConfig?.platform
+        }
 
         const params = {
             params: queryParams,
@@ -366,7 +368,7 @@ export default class Retter {
 
     public async signOut(): Promise<void> {
         if (!this.initialized) throw new Error('Retter SDK not initialized.')
-        
+
         await this.clearCloudObjects()
 
         await this.auth!.signOut()
