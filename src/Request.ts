@@ -1,6 +1,6 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios'
 
-import { base64Encode } from './helpers'
+import { base64Encode, sort } from './helpers'
 import { RetterClientConfig, RetterRegion, RetterRegionConfig } from './types'
 
 const RetterRegions: RetterRegionConfig[] = [
@@ -58,7 +58,7 @@ export default class Request {
             if (!queryStringParams.__platform && this.platform) queryStringParams.__platform = this.platform
 
             if (params.method === 'get' && params.base64Encode !== false && params.data) {
-                const data = base64Encode(JSON.stringify(params.data))
+                const data = base64Encode(JSON.stringify(sort(params.data)))
                 delete params.data
                 queryStringParams.data = data
                 queryStringParams.__isbase64 = true
