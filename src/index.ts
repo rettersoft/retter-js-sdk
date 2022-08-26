@@ -453,7 +453,7 @@ export default class Retter {
             methods: instance?.methods ?? [],
             response: instance?.response ?? null,
             instanceId: config.instanceId!,
-            isNewInstance: instance?.isNewInstance ?? false,
+            isNewInstance: instance?.newInstance ?? false,
         }
 
         this.cloudObjects.push({ ...retVal, config, unsubscribers })
