@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs'
+import { Subscription } from 'rxjs'
 import { AxiosResponse } from 'axios'
 import { Unsubscribe } from '@firebase/util'
 
@@ -165,9 +165,13 @@ export interface RetterCloudObjectCall extends RetterCloudObjectRequest {
 }
 
 interface RetterCloudObjectStates {
-    role: Observable<any>
-    user: Observable<any>
-    public: Observable<any>
+    role: RetterCloudObjectStateObservable
+    user: RetterCloudObjectStateObservable
+    public: RetterCloudObjectStateObservable
+}
+
+interface RetterCloudObjectStateObservable {
+    subscribe: (state?: any | undefined) => Subscription
 }
 
 export enum Runtime {

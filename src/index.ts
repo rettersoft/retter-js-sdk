@@ -324,6 +324,11 @@ export default class Retter {
     }
 
     protected async getFirebaseState(config: RetterCloudObjectConfig) {
+        const { projectId } = this.clientConfig!
+        const user = await this.auth!.getCurrentUser()
+
+        const unsubscribers: Unsubscribe[] = []
+
         const queues = {
             role: new ReplaySubject(1),
             user: new ReplaySubject(1),
@@ -331,18 +336,38 @@ export default class Retter {
         }
 
         const state = {
-            role: queues.role.asObservable(),
-            user: queues.user.asObservable(),
-            public: queues.public.asObservable(),
+            role: {
+                subscribe: (observer: any) => {
+                    const listener = this.getFirebaseListener(
+                        queues.role,
+                        `/projects/${projectId}/classes/${config.classId}/instances/${config.instanceId}/roleState`,
+                        user!.identity!
+                    )
+                    unsubscribers.push(listener)
+
+                    return queues.role.subscribe(observer)
+                },
+            },
+            user: {
+                subscribe: (observer: any) => {
+                    const listener = this.getFirebaseListener(
+                        queues.user,
+                        `/projects/${projectId}/classes/${config.classId}/instances/${config.instanceId}/userState`,
+                        user!.userId!
+                    )
+                    unsubscribers.push(listener)
+
+                    return queues.user.subscribe(observer)
+                },
+            },
+            public: {
+                subscribe: (observer: any) => {
+                    const listener = this.getFirebaseListener(queues.public, `/projects/${projectId}/classes/${config.classId}/instances`, config.instanceId!)
+                    unsubscribers.push(listener)
+                    return queues.public.subscribe(observer)
+                },
+            },
         }
-
-        const { projectId } = this.clientConfig!
-        const user = await this.auth!.getCurrentUser()
-
-        const unsubscribers: Unsubscribe[] = []
-        unsubscribers.push(this.getFirebaseListener(queues.public, `/projects/${projectId}/classes/${config.classId}/instances`, config.instanceId!))
-        unsubscribers.push(this.getFirebaseListener(queues.user, `/projects/${projectId}/classes/${config.classId}/instances/${config.instanceId}/userState`, user!.userId!))
-        unsubscribers.push(this.getFirebaseListener(queues.role, `/projects/${projectId}/classes/${config.classId}/instances/${config.instanceId}/roleState`, user!.identity!))
 
         return { state, unsubscribers }
     }
