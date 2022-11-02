@@ -12,8 +12,6 @@ export default class Auth {
 
     private clientConfig?: RetterClientConfig
 
-    private rootProjectId?: string
-
     private tokenStorageKey?: string
 
     /**
@@ -24,8 +22,6 @@ export default class Auth {
     constructor(config: RetterClientConfig) {
         this.clientConfig = config
         this.tokenStorageKey = `RIO_TOKENS_KEY.${config.projectId}`
-
-        this.rootProjectId = config.rootProjectId ?? 'root'
     }
 
     public setHttp(http: RetterRequest) {
@@ -107,29 +103,26 @@ export default class Auth {
      */
     public async getTokenData(): Promise<RetterTokenData | undefined> {
         const tokenData = await this.getCurrentTokenData()
-        if (tokenData) {
-            const now = tokenData.diff + Math.round(new Date().getTime() / 1000) + 30 // Plus 30 seconds, just in case.
+        if (!tokenData) return undefined
+        const now = tokenData.diff + Math.round(new Date().getTime() / 1000) + 30 // Plus 30 seconds, just in case.
 
-            tokenData.accessTokenDecoded = this.decodeToken(tokenData.accessToken)
-            tokenData.refreshTokenDecoded = this.decodeToken(tokenData.refreshToken)
+        tokenData.accessTokenDecoded = this.decodeToken(tokenData.accessToken)
+        tokenData.refreshTokenDecoded = this.decodeToken(tokenData.refreshToken)
 
-            const accessTokenExpiresAt = tokenData.accessTokenDecoded.exp ?? 0
-            const refreshTokenExpiresAt = tokenData.refreshTokenDecoded.exp ?? 0
+        const accessTokenExpiresAt = tokenData.accessTokenDecoded.exp ?? 0
+        const refreshTokenExpiresAt = tokenData.refreshTokenDecoded.exp ?? 0
 
-            // refresh token is valid, but access token is expired
-            if (refreshTokenExpiresAt > now && accessTokenExpiresAt <= now) {
-                const freshTokenData = await this.getFreshToken(tokenData.refreshToken, tokenData.refreshTokenDecoded.userId!)
+        // refresh token is valid, but access token is expired
+        if (refreshTokenExpiresAt > now && accessTokenExpiresAt <= now) {
+            const freshTokenData = await this.getFreshToken(tokenData.refreshToken, tokenData.refreshTokenDecoded.userId!)
 
-                freshTokenData.accessTokenDecoded = this.decodeToken(freshTokenData.accessToken)
-                freshTokenData.refreshTokenDecoded = this.decodeToken(freshTokenData.refreshToken)
+            freshTokenData.accessTokenDecoded = this.decodeToken(freshTokenData.accessToken)
+            freshTokenData.refreshTokenDecoded = this.decodeToken(freshTokenData.refreshToken)
 
-                return freshTokenData
-            }
-
-            return tokenData
+            return freshTokenData
         }
 
-        return await this.getAnonymousToken()
+        return tokenData
     }
 
     /**
@@ -167,25 +160,10 @@ export default class Auth {
      * @returns RetterTokenData
      */
     protected async getFreshToken(refreshToken: string, userId: string): Promise<RetterTokenData> {
-        const path = `/CALL/ProjectUser/refreshToken/${this.clientConfig!.projectId}_${userId}`
-        const response = await this.http!.call<RetterTokenData>(this.rootProjectId!, path, { method: 'get', params: { refreshToken } })
+        const path = `/AUTH/refreshToken`
+        const response = await this.http!.call<RetterTokenData>(this.clientConfig!.projectId, path, { method: 'get', params: { refreshToken } })
 
         return this.formatTokenData(response.data)
-    }
-
-    /**
-     * It tries to get a access token from the server anonymously.
-     *
-     * @returns RetterTokenData
-     */
-    protected async getAnonymousToken(): Promise<RetterTokenData> {
-        const path = `/INSTANCE/ProjectUser`
-        const response = await this.http!.call<{ response: RetterTokenData }>(this.rootProjectId!, path, {
-            method: 'get',
-            params: { projectId: this.clientConfig!.projectId },
-        })
-
-        return this.formatTokenData(response.data.response)
     }
 
     /**
@@ -196,10 +174,9 @@ export default class Auth {
      * @returns RetterTokenData
      */
     public async signIn(token: string): Promise<RetterTokenData> {
-        const userId = this.decodeToken(token).userId!
-        const path = `/CALL/ProjectUser/authWithCustomToken/${this.clientConfig!.projectId}_${userId}`
+        const path = `/AUTH/authWithCustomToken`
 
-        const { data: tokenData } = await this.http!.call<RetterTokenData>(this.rootProjectId!, path, { method: 'get', params: { customToken: token } })
+        const { data: tokenData } = await this.http!.call<RetterTokenData>(this.clientConfig!.projectId, path, { method: 'get', params: { customToken: token } })
 
         return this.formatTokenData(tokenData)
     }
@@ -212,11 +189,11 @@ export default class Auth {
     public async signOut(): Promise<void> {
         try {
             const tokenData = await this.getCurrentTokenData()
-            
+
             if (tokenData) {
-                const path = `/CALL/ProjectUser/signOut/${this.clientConfig!.projectId}_${tokenData.accessTokenDecoded!.userId}`
-                
-                await this.http!.call(this.rootProjectId!, path, { method: 'get', params: { accessToken: tokenData.accessToken } })
+                const path = `/AUTH/signOut`
+
+                await this.http!.call(this.clientConfig!.projectId, path, { method: 'get', params: { _token: tokenData.accessToken } })
             }
         } catch (error) {}
     }
@@ -234,7 +211,7 @@ export default class Auth {
             return {
                 uid: data.userId,
                 identity: data.identity,
-                authStatus: data.anonymous ? RetterAuthStatus.SIGNED_IN_ANONYM : RetterAuthStatus.SIGNED_IN,
+                authStatus: RetterAuthStatus.SIGNED_IN,
             }
         }
 

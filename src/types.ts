@@ -63,7 +63,6 @@ export interface RetterAction {
 
 export enum RetterAuthStatus {
     SIGNED_IN = 'SIGNED_IN',
-    SIGNED_IN_ANONYM = 'SIGNED_IN_ANONYM',
     SIGNED_OUT = 'SIGNED_OUT',
     AUTH_FAILED = 'AUTH_FAILED',
 }
