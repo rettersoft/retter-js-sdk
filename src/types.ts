@@ -35,7 +35,6 @@ export interface RetterRegionConfig {
 export enum RetterActions {
     EMPTY = 'EMPTY',
     SIGN_IN = 'SIGN_IN',
-    SIGN_IN_ANONYM = 'SIGN_IN_ANONYM',
     COS_CALL = 'COS_CALL',
     COS_STATE = 'COS_STATE',
     COS_INSTANCE = 'COS_INSTANCE',

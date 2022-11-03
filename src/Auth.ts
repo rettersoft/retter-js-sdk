@@ -97,7 +97,6 @@ export default class Auth {
      * It checks if the token is expired or stored in the platforms storage.
      * If it is expired, it tries to refresh the token.
      * If it is not expired, it returns the token data.
-     * If it is not stored in the platforms storage, it tries to get it from the server anonymously.
      *
      * @returns RetterTokenData | undefined
      */
@@ -206,11 +205,11 @@ export default class Auth {
      */
     public getAuthStatus(tokenData?: RetterTokenData): RetterAuthChangedEvent {
         if (tokenData && tokenData.accessTokenDecoded) {
-            const data = tokenData.accessTokenDecoded!
+            const { userId: uid, identity } = tokenData.accessTokenDecoded
 
             return {
-                uid: data.userId,
-                identity: data.identity,
+                uid,
+                identity,
                 authStatus: RetterAuthStatus.SIGNED_IN,
             }
         }

@@ -56,6 +56,8 @@ export default class Retter {
 
     private cloudObjects: RetterCloudObjectItem[] = []
 
+    private listeners: { [key: string]: any } = {}
+
     private constructor() {}
 
     public static getInstance(config: RetterClientConfig): Retter {
@@ -218,10 +220,6 @@ export default class Retter {
             return defer(() => of({ ...actionWrapper, response: true })).pipe(materialize())
         }
 
-        if (actionWrapper.action?.action === RetterActions.SIGN_IN_ANONYM) {
-            return defer(() => of({ ...actionWrapper, response: this.auth!.getAuthStatus(actionWrapper.tokenData) })).pipe(materialize())
-        }
-
         return defer(async () => {
             try {
                 const endpoint = this.getCosEndpoint(actionWrapper)
@@ -338,32 +336,41 @@ export default class Retter {
         const state = {
             role: {
                 subscribe: (observer: any) => {
-                    const listener = this.getFirebaseListener(
-                        queues.role,
-                        `/projects/${projectId}/classes/${config.classId}/instances/${config.instanceId}/roleState`,
-                        user!.identity!
-                    )
-                    unsubscribers.push(listener)
+                    if (!this.listeners[`${projectId}_${config.classId}_${config.instanceId}_role`]) {
+                        const listener = this.getFirebaseListener(
+                            queues.role,
+                            `/projects/${projectId}/classes/${config.classId}/instances/${config.instanceId}/roleState`,
+                            user!.identity!
+                        )
+                        unsubscribers.push(listener)
+                        this.listeners[`${projectId}_${config.classId}_${config.instanceId}_role`] = listener
+                    }
 
                     return queues.role.subscribe(observer)
                 },
             },
             user: {
                 subscribe: (observer: any) => {
-                    const listener = this.getFirebaseListener(
-                        queues.user,
-                        `/projects/${projectId}/classes/${config.classId}/instances/${config.instanceId}/userState`,
-                        user!.userId!
-                    )
-                    unsubscribers.push(listener)
+                    if (!this.listeners[`${projectId}_${config.classId}_${config.instanceId}_user`]) {
+                        const listener = this.getFirebaseListener(
+                            queues.user,
+                            `/projects/${projectId}/classes/${config.classId}/instances/${config.instanceId}/userState`,
+                            user!.userId!
+                        )
+                        unsubscribers.push(listener)
+                        this.listeners[`${projectId}_${config.classId}_${config.instanceId}_user`] = listener
+                    }
 
                     return queues.user.subscribe(observer)
                 },
             },
             public: {
                 subscribe: (observer: any) => {
-                    const listener = this.getFirebaseListener(queues.public, `/projects/${projectId}/classes/${config.classId}/instances`, config.instanceId!)
-                    unsubscribers.push(listener)
+                    if (!this.listeners[`${projectId}_${config.classId}_${config.instanceId}_public`]) {
+                        const listener = this.getFirebaseListener(queues.public, `/projects/${projectId}/classes/${config.classId}/instances`, config.instanceId!)
+                        unsubscribers.push(listener)
+                        this.listeners[`${projectId}_${config.classId}_${config.instanceId}_public`] = listener
+                    }
                     return queues.public.subscribe(observer)
                 },
             },
@@ -380,11 +387,6 @@ export default class Retter {
     }
 
     // Public Methods
-    public async signInAnonymously(): Promise<RetterAuthChangedEvent> {
-        if (!this.initialized) throw new Error('Retter SDK not initialized.')
-        return await this.sendToActionQueue<RetterAuthChangedEvent>({ action: RetterActions.SIGN_IN_ANONYM })
-    }
-
     public async authenticateWithCustomToken(token: string): Promise<RetterAuthChangedEvent> {
         if (!this.initialized) throw new Error('Retter SDK not initialized.')
 
