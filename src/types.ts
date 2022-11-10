@@ -1,6 +1,6 @@
-import { Subscription } from 'rxjs'
 import { AxiosResponse } from 'axios'
 import { Unsubscribe } from '@firebase/util'
+import { ReplaySubject, Subscription } from 'rxjs'
 
 // Config
 export interface RetterClientConfig {
@@ -169,6 +169,7 @@ interface RetterCloudObjectStates {
 }
 
 interface RetterCloudObjectStateObservable {
+    queue?: ReplaySubject<any>
     subscribe: (state?: any | undefined) => Subscription
 }
 

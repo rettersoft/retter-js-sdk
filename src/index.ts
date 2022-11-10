@@ -121,7 +121,8 @@ export default class Retter {
                     return ev
                 }),
                 switchMap(async ev => {
-                    await this.clearCloudObjects()
+                    if (this.firebaseAuth) await signOut(this.firebaseAuth!)
+                    this.clearFirebase()
                     if (ev.tokenData) {
                         await this.initFirebase(ev)
                     }
@@ -335,6 +336,7 @@ export default class Retter {
 
         const state = {
             role: {
+                queue: queues.role,
                 subscribe: (observer: any) => {
                     if (!this.listeners[`${projectId}_${config.classId}_${config.instanceId}_role`]) {
                         const listener = this.getFirebaseListener(
@@ -350,6 +352,7 @@ export default class Retter {
                 },
             },
             user: {
+                queue: queues.user,
                 subscribe: (observer: any) => {
                     if (!this.listeners[`${projectId}_${config.classId}_${config.instanceId}_user`]) {
                         const listener = this.getFirebaseListener(
@@ -365,6 +368,7 @@ export default class Retter {
                 },
             },
             public: {
+                queue: queues.public,
                 subscribe: (observer: any) => {
                     if (!this.listeners[`${projectId}_${config.classId}_${config.instanceId}_public`]) {
                         const listener = this.getFirebaseListener(queues.public, `/projects/${projectId}/classes/${config.classId}/instances`, config.instanceId!)
@@ -380,8 +384,22 @@ export default class Retter {
     }
 
     protected async clearCloudObjects() {
+        // clear listeners
+        const listeners = Object.values(this.listeners)
+        if (listeners.length > 0) {
+            listeners.map(i => i())
+
+            this.cloudObjects.map(i => {
+                i.state?.role.queue?.complete()
+                i.state?.user.queue?.complete()
+                i.state?.public.queue?.complete()
+            })
+        }
+        this.listeners = {}
+
         this.cloudObjects.map(i => i.unsubscribers.map(u => u()))
         this.cloudObjects = []
+
         if (this.firebaseAuth) await signOut(this.firebaseAuth!)
         this.clearFirebase()
     }
