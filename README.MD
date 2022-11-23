@@ -101,6 +101,7 @@ interface RetterCloudObjectConfig {
     headers?: {
         [key: string]: string
     }
+    pathParams?: string
     queryStringParams?: {
         [key: string]: string
     }
@@ -205,4 +206,37 @@ interface RetterCloudObjectMethod {
 
 ```ts
 const instanceIds = await cloudObject.listInstances()
+```
+
+## Static Calls
+
+> make sure using sdk version v0.5.3 or higher
+
+Static method calls can be made via sdk. Getting a cloud object is not necessary. Simple call `makeStaticCall` method on rio objecty. `classId` and `method` parameters must be specified. Other parameters can be seen in interface below.
+
+```ts
+interface RetterCloudObjectStaticCall {
+    classId: string
+    method: string
+    headers?: { [key: string]: string }
+    pathParams?: string
+    queryStringParams?: { [key: string]: string }
+    httpMethod?: 'get' | 'delete' | 'post' | 'put'
+    body?: any
+    platform?: string
+    culture?: string
+}
+```
+
+Example:
+
+```ts
+import Retter from '@retter/sdk'
+
+const rio = Retter.getInstance(config: RetterClientConfig)
+
+await rio.makeStaticCall({
+    classId: 'StaticTest',
+    method: 'methodName',
+})
 ```

@@ -22,6 +22,7 @@ import {
     RetterCloudObjectItem,
     RetterCloudObjectRequest,
     RetterCloudObjectState,
+    RetterCloudObjectStaticCall,
     RetterTokenPayload,
 } from './types'
 
@@ -224,6 +225,7 @@ export default class Retter {
         return defer(async () => {
             try {
                 const endpoint = this.getCosEndpoint(actionWrapper)
+
                 const response = await this.http!.call(this.clientConfig!.projectId, endpoint.path, endpoint.params)
                 return { ...actionWrapper, response }
             } catch (error: any) {
@@ -302,9 +304,14 @@ export default class Retter {
                 path: `LIST/${data.classId}`,
                 params,
             }
+        } else if (action.action === RetterActions.COS_STATIC_CALL) {
+            return {
+                path: `CALL/${data.classId}/${data.method}${data.pathParams ? `/${data.pathParams}` : ''}`,
+                params,
+            }
         } else {
             return {
-                path: `CALL/${data.classId}/${data.method}/${data.instanceId}`,
+                path: `CALL/${data.classId}/${data.method}/${data.instanceId}${data.pathParams ? `/${data.pathParams}` : ''}`,
                 params,
             }
         }
@@ -504,6 +511,15 @@ export default class Retter {
         this.cloudObjects.push({ ...retVal, config, unsubscribers })
 
         return retVal
+    }
+
+    public async makeStaticCall<T>(params: RetterCloudObjectStaticCall): Promise<RetterCallResponse<T>> {
+        if (!this.initialized) throw new Error('Retter SDK not initialized.')
+
+        return await this.sendToActionQueue<RetterCallResponse<T>>({
+            action: RetterActions.COS_STATIC_CALL,
+            data: { ...params, classId: params.classId },
+        })
     }
 
     public get authStatus(): Observable<RetterAuthChangedEvent> {

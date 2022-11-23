@@ -36,9 +36,10 @@ export enum RetterActions {
     EMPTY = 'EMPTY',
     SIGN_IN = 'SIGN_IN',
     COS_CALL = 'COS_CALL',
+    COS_LIST = 'COS_LIST',
     COS_STATE = 'COS_STATE',
     COS_INSTANCE = 'COS_INSTANCE',
-    COS_LIST = 'COS_LIST',
+    COS_STATIC_CALL = 'COS_STATIC_CALL',
 }
 
 export interface RetterActionWrapper {
@@ -110,6 +111,7 @@ export interface RetterCloudObjectConfig {
     instanceId?: string
     method?: string
     headers?: { [key: string]: string }
+    pathParams?: string
     queryStringParams?: { [key: string]: string }
     httpMethod?: 'get' | 'delete' | 'post' | 'put'
     base64Encode?: boolean
@@ -160,6 +162,10 @@ export type RetterCloudObjectRequest = Omit<RetterCloudObjectConfig, 'classId' |
 export interface RetterCloudObjectCall extends RetterCloudObjectRequest {
     method: string
     retryConfig?: RetterRetryConfig
+}
+
+export interface RetterCloudObjectStaticCall extends Omit<RetterCloudObjectConfig, 'useLocal' | 'instanceId' | 'key'> {
+    method: string
 }
 
 interface RetterCloudObjectStates {
