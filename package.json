@@ -1,6 +1,6 @@
 {
     "name": "@retter/sdk",
-    "version": "0.5.3",
+    "version": "0.5.4",
     "description": "Client sdk for retter.io",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -19,8 +19,10 @@
     "author": "Semih Ayhan",
     "license": "ISC",
     "dependencies": {
+        "@types/js-cookie": "^3.0.2",
         "axios": "^0.24.0",
         "firebase": "^9.6.2",
+        "js-cookie": "^3.0.1",
         "jwt-decode": "^3.1.2",
         "rxjs": "6.6.3"
     },

@@ -1,4 +1,5 @@
 import jwt from 'jwt-decode'
+import Cookies from 'js-cookie'
 
 import RetterRequest from './Request'
 import { getRuntime } from './helpers'
@@ -41,6 +42,10 @@ export default class Auth {
         if (typeof tokenData === 'undefined') return
         if (runtime === Runtime.web) {
             localStorage.setItem(this.tokenStorageKey!, JSON.stringify(tokenData))
+
+            if (this.clientConfig?.useCookies) {
+                Cookies.set(this.tokenStorageKey!, JSON.stringify(tokenData))
+            }
         }
         this.currentTokenData = tokenData as RetterTokenData
     }
@@ -54,6 +59,7 @@ export default class Auth {
         const runtime = getRuntime()
         if (runtime === Runtime.web) {
             localStorage.removeItem(this.tokenStorageKey!)
+            Cookies.remove(this.tokenStorageKey!)
         }
         this.currentTokenData = undefined
     }
@@ -67,8 +73,15 @@ export default class Auth {
         let data: RetterTokenData | undefined
         const runtime = getRuntime()
         if (runtime === Runtime.web) {
-            const item = localStorage.getItem(this.tokenStorageKey!)
-            if (item && item !== 'undefined') data = JSON.parse(item)
+            if (this.clientConfig?.useCookies) {
+                const item = Cookies.get(this.tokenStorageKey!)
+                if (item && item !== 'undefined') data = JSON.parse(item)
+            }
+
+            if (!data) {
+                const item = localStorage.getItem(this.tokenStorageKey!)
+                if (item && item !== 'undefined') data = JSON.parse(item)
+            }
         } else {
             data = this.currentTokenData
         }

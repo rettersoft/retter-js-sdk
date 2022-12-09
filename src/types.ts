@@ -11,6 +11,7 @@ export interface RetterClientConfig {
     platform?: string
     culture?: string
     retryConfig?: RetterRetryConfig
+    useCookies?: boolean
     [key: string]: any
 }
 
