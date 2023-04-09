@@ -266,9 +266,7 @@ export default class Retter {
     protected getCosEndpoint(ev: RetterActionWrapper): { path: string; params: any } {
         const action = ev.action!
         const data = action.data as RetterCloudObjectConfig
-        const queryParams: any = {
-            _token: data.token ?? ev.tokenData?.accessToken,
-        }
+        const queryParams: any = {}
 
         for (let key in data.queryStringParams || []) {
             queryParams[key] = data.queryStringParams![key]
@@ -285,6 +283,11 @@ export default class Retter {
             data: data.body,
             base64Encode: data.base64Encode ?? true,
             headers: { ...data.headers },
+        }
+
+        const accessToken = data.token ?? ev.tokenData?.accessToken
+        if (accessToken) {
+            params.headers['Authorization'] = `Bearer ${accessToken}`
         }
 
         if (action.action === RetterActions.COS_INSTANCE) {
