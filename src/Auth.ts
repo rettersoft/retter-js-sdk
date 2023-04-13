@@ -205,7 +205,7 @@ export default class Auth {
                 const path = `/TOKEN/signOut`
 
                 await this.http!.call(this.clientConfig!.projectId, path, {
-                    method: 'get',
+                    method: 'post',
                     params: {
                         header: {
                             Authorization: `Bearer ${tokenData.accessToken}`,
