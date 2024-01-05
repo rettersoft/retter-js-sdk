@@ -229,6 +229,14 @@ export default class Retter {
                 const response = await this.http!.call(this.clientConfig!.projectId, endpoint.path, endpoint.params)
                 return { ...actionWrapper, response }
             } catch (error: any) {
+                if (
+                    error.response &&
+                    error.response.status === 403 &&
+                    error.response.data &&
+                    error.response.data.code === 'ACCESS_DENIED'
+                ) {
+                    this.signOut()
+                }
                 throw { ...actionWrapper, responseError: error }
             }
         }).pipe(materialize())
