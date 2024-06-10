@@ -206,10 +206,8 @@ export default class Auth {
 
                 await this.http!.call(this.clientConfig!.projectId, path, {
                     method: 'post',
-                    params: {
-                        header: {
-                            Authorization: `Bearer ${tokenData.accessToken}`,
-                        },
+                    headers: {
+                        Authorization: `Bearer ${tokenData.accessToken}`,
                     },
                 })
             }
