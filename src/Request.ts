@@ -33,7 +33,7 @@ export default class Request {
         this.region = RetterRegions.find(region => region.id === config.region)
 
         this.culture = config.culture
-        this.platform = config.culture
+        this.platform = config.platform
     }
 
     protected createAxiosInstance() {
