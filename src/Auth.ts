@@ -126,7 +126,7 @@ export default class Auth {
 
         // refresh token is valid, but access token is expired
         if (refreshTokenExpiresAt > now && accessTokenExpiresAt <= now) {
-            const freshTokenData = await this.getFreshToken(tokenData.refreshToken)
+            const freshTokenData = await this.getFreshToken(tokenData.refreshToken, tokenData.accessToken)
 
             freshTokenData.accessTokenDecoded = this.decodeToken(freshTokenData.accessToken)
             freshTokenData.refreshTokenDecoded = this.decodeToken(freshTokenData.refreshToken)
@@ -170,9 +170,9 @@ export default class Auth {
      * @param refreshToken
      * @returns RetterTokenData
      */
-    protected async getFreshToken(refreshToken: string): Promise<RetterTokenData> {
+    protected async getFreshToken(refreshToken: string, accessToken: string): Promise<RetterTokenData> {
         const path = `/TOKEN/refresh`
-        const response = await this.http!.call<RetterTokenData>(this.clientConfig!.projectId, path, { method: 'post', data: { refreshToken } })
+        const response = await this.http!.call<RetterTokenData>(this.clientConfig!.projectId, path, { method: 'post', data: { refreshToken, accessToken } })
 
         return this.formatTokenData(response.data)
     }
