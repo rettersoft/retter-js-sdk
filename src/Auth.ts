@@ -44,7 +44,7 @@ export default class Auth {
             localStorage.setItem(this.tokenStorageKey!, JSON.stringify(tokenData))
 
             if (this.clientConfig?.useCookies) {
-                Cookies.set(this.tokenStorageKey!, JSON.stringify(tokenData), { secure: true })
+                Cookies.set(this.tokenStorageKey!, JSON.stringify(tokenData), { secure: true, HttpOnly: true })
             }
         }
         this.currentTokenData = tokenData as RetterTokenData
