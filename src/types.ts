@@ -1,5 +1,5 @@
 import { AxiosResponse } from 'axios'
-import { Unsubscribe } from '@firebase/util'
+import { Unsubscribe } from 'firebase/firestore'
 import { ReplaySubject, Subscription } from 'rxjs'
 
 // Config
@@ -12,7 +12,14 @@ export interface RetterClientConfig {
     culture?: string
     retryConfig?: RetterRetryConfig
     useCookies?: boolean
+    memoryCache?: RetterMemoryCacheConfig
     [key: string]: any
+}
+
+export interface RetterMemoryCacheConfig {
+    enabled: boolean
+    maxEntryCount?: number
+    enableLogs?: boolean
 }
 
 export interface RetterRetryConfig {

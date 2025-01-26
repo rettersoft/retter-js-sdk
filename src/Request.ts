@@ -1,7 +1,8 @@
-import axios, { AxiosInstance, AxiosResponse } from 'axios'
+import axios, { AxiosInstance } from 'axios'
 
 import { base64Encode, sort } from './helpers'
-import { RetterClientConfig, RetterRegion, RetterRegionConfig } from './types'
+import { RetterCallResponse, RetterClientConfig, RetterRegion, RetterRegionConfig } from './types'
+import { RioCache } from './cache'
 
 const RetterRegions: RetterRegionConfig[] = [
     {
@@ -23,6 +24,8 @@ export default class Request {
 
     private platform?: string
 
+    private rioFetch?: RioCache
+
     private axiosInstance?: AxiosInstance
 
     constructor(config: RetterClientConfig) {
@@ -34,6 +37,9 @@ export default class Request {
 
         this.culture = config.culture
         this.platform = config.platform
+        if (config.memoryCache?.enabled) {
+            this.rioFetch = new RioCache(this.axiosInstance!, config.memoryCache.maxEntryCount, config.memoryCache.enableLogs)
+        }
     }
 
     protected createAxiosInstance() {
@@ -48,10 +54,10 @@ export default class Request {
 
     protected buildUrl(projectId: string, path: string) {
         const prefix = this.url ? `${this.url}` : `${projectId}.${this.region!.url}`
-        return `https://${prefix}/${projectId}/${path.startsWith('/') ? path.substr(1) : path}`
+        return `https://${prefix}/${projectId}/${path.startsWith('/') ? path.substring(1) : path}`
     }
 
-    public async call<T>(projectId: string, path: string, params?: any): Promise<AxiosResponse<T>> {
+    public async call<T>(projectId: string, path: string, params?: any): Promise<RetterCallResponse<T>> {
         try {
             const queryStringParams = { ...params.params }
             if (!queryStringParams.__culture && this.culture) queryStringParams.__culture = this.culture
@@ -64,7 +70,12 @@ export default class Request {
                 queryStringParams.__isbase64 = true
             }
 
-            return await this.axiosInstance!({ url: this.buildUrl(projectId, path), ...params, params: queryStringParams })
+            const config = { url: this.buildUrl(projectId, path), ...params, params: queryStringParams }
+
+            if (this.rioFetch && params.method === 'get') {
+                return this.rioFetch.getWithCache(config)
+            }
+            return this.axiosInstance!(config)
         } catch (error: any) {
             throw error
         }
