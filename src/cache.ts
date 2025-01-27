@@ -29,7 +29,7 @@ export class RioCache {
     const { url: baseUrl, params } = config
 
     if (!baseUrl) {
-      throw new Error('Missing cacheKey')
+      throw new Error('Missing url')
     }
 
     const cacheKey = `${baseUrl}?${new URLSearchParams(params).toString()}`
@@ -87,7 +87,6 @@ export class RioCache {
 
     const maxAgeMatch = cacheControl?.match(/max-age=(\d+)/)
     const maxAge = maxAgeMatch ? parseInt(maxAgeMatch[1], 10) : 0
-
     const age = ageHeader ? parseInt(ageHeader, 10) : 0
 
     // Handle time skew using the Date header
@@ -117,7 +116,7 @@ export class RioCache {
 
       this.cache.set(cacheKey, {
         data,
-        expiry: now + remainingFreshness, // Remaining freshness is already in milliseconds
+        expiry: now + remainingFreshness,
       })
 
       this.enableLogs && console.log(`Caching response with remaining freshness: ${remainingFreshness / 1000}s`)
