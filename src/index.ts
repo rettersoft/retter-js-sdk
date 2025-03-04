@@ -1,7 +1,5 @@
-import { Unsubscribe } from '@firebase/util'
-import { getFirestore } from 'firebase/firestore'
 import { FirebaseApp, initializeApp } from 'firebase/app'
-import { doc, Firestore, onSnapshot } from 'firebase/firestore'
+import { doc, Firestore, onSnapshot, getFirestore, Unsubscribe } from 'firebase/firestore'
 import { Auth, getAuth, signInWithCustomToken, signOut } from 'firebase/auth'
 import { defer, Notification, Observable, of, ReplaySubject, Subject } from 'rxjs'
 import { concatMap, distinctUntilChanged, filter, map, materialize, mergeMap, share, switchMap, tap } from 'rxjs/operators'

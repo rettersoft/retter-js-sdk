@@ -1,6 +1,6 @@
 {
     "name": "@retter/sdk",
-    "version": "0.7.4",
+    "version": "0.8.1",
     "description": "Client sdk for retter.io",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -19,22 +19,23 @@
     "author": "Semih Ayhan",
     "license": "ISC",
     "dependencies": {
-        "@types/js-cookie": "3.0.2",
-        "axios": "1.7.7",
-        "firebase": "10.13.1",
-        "js-cookie": "3.0.1",
+        "@types/js-cookie": "3.0.6",
+        "axios": "1.7.9",
+        "firebase": "10.13.2",
+        "js-cookie": "3.0.5",
         "jwt-decode": "3.1.2",
-        "rxjs": "6.6.3"
+        "rxjs": "6.6.7"
     },
     "scripts": {
         "build": "tsc && webpack",
-        "test": "ts-node test/index.ts"
+        "test": "ts-node test/**"
     },
     "devDependencies": {
-        "@types/node": "22.5.4",
-        "typescript": "5.6.2",
-        "ts-loader": "^9.2.6",
+        "@types/node": "22.10.10",
+        "typescript": "5.7.3",
+        "ts-loader": "^9.2.9",
         "webpack": "^5.67.0",
-        "webpack-cli": "^4.9.1"
+        "webpack-cli": "^4.9.2",
+        "ts-node": "^10.9.2"
     }
 }

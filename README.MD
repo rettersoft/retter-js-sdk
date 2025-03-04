@@ -37,6 +37,9 @@ interface RetterClientConfig {
     region?: RetterRegion
     platform?: string
     culture?: string
+    memoryCache?: { // use it only in non-browser environments
+      enabled: boolean
+    }
 }
 ```
 
