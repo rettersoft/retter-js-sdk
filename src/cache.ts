@@ -38,7 +38,7 @@ export class RioCache {
     if (this.cache.has(cacheKey)) {
       const cacheEntry = this.cache.get(cacheKey)!
       if (cacheEntry.expiry > now) {
-        this.enableLogs && console.log('Serving from cache:', cacheKey)
+        this.enableLogs && console.log('rio-cache: Serving from cache:', cacheKey)
 
         // Move the accessed entry to the end to mark it as recently used
         this.cache.delete(cacheKey)
@@ -53,7 +53,7 @@ export class RioCache {
 
     // Check if a request is already in progress for this URL
     if (this.pendingRequests.has(cacheKey)) {
-      this.enableLogs && console.log(`Waiting for in-progress request: ${cacheKey}`)
+      this.enableLogs && console.log(`rio-cache: Waiting for in-progress request: ${cacheKey}`)
       return this.pendingRequests.get(cacheKey)!
     }
 
@@ -111,7 +111,7 @@ export class RioCache {
       if (this.cache.size >= this.maxEntries) {
         const firstKey = Array.from(this.cache.keys())[0] // Get the first key explicitly
         this.cache.delete(firstKey)
-        this.enableLogs && console.log(`Evicted cache entry: ${firstKey}`)
+        this.enableLogs && console.log(`rio-cache: Evicted cache entry: ${firstKey}`)
       }
 
       this.cache.set(cacheKey, {
@@ -119,9 +119,9 @@ export class RioCache {
         expiry: now + remainingFreshness,
       })
 
-      this.enableLogs && console.log(`Caching response with remaining freshness: ${remainingFreshness / 1000}s`)
+      this.enableLogs && console.log(`rio-cache: Caching response with remaining freshness: ${remainingFreshness / 1000}s - ${cacheKey}`)
     } else {
-      this.enableLogs && console.log('No remaining freshness not caching.')
+      this.enableLogs && console.log(`rio-cache: No remaining freshness not caching: ${cacheKey}`)
     }
 
     return data
