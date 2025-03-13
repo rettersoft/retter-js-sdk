@@ -69,6 +69,9 @@ export default class Request {
                 queryStringParams.data = data
                 queryStringParams.__isbase64 = true
             }
+            if (params.method === 'post' && !params.data){
+                params.data = {}
+            }
 
             const config = { url: this.buildUrl(projectId, path), ...params, params: queryStringParams }
 
