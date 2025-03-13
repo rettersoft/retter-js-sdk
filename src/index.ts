@@ -60,7 +60,9 @@ export default class Retter {
     private constructor() {}
 
     public static getInstance(config: RetterClientConfig): Retter {
-        const instance = Retter.instances.find(instance => instance.clientConfig?.projectId === config.projectId)
+        const instance = Retter.instances.find(instance =>
+          instance.clientConfig?.projectId === config.projectId &&
+          instance.clientConfig?.instanceKey === config.instanceKey)
         if (instance) return instance
 
         const newInstance = new Retter()

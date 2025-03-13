@@ -5,6 +5,8 @@ import { ReplaySubject, Subscription } from 'rxjs'
 // Config
 export interface RetterClientConfig {
     projectId: string
+    /** To support multi-config for same projectId, give different instance key. Otherwise, leave undefined */
+    instanceKey?: string
     rootProjectId?: string
     url?: string
     region?: RetterRegion

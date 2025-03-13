@@ -33,12 +33,15 @@ const rio = Retter.getInstance(config: RetterClientConfig)
 
 interface RetterClientConfig {
     projectId: string
+    instanceKey?: string // to support multi-config for same projectId, give different instance key. Otherwise, leave undefined
     rootProjectId?: string
     region?: RetterRegion
     platform?: string
     culture?: string
     memoryCache?: { // use it only in non-browser environments
       enabled: boolean
+      maxEntryCount?: number // default: 100
+      enableLogs?: boolean // default: false
     }
 }
 ```
