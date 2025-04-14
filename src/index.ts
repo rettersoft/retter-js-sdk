@@ -471,8 +471,8 @@ export default class Retter {
                 get: instance?.get ?? {},
                 methods: instance?.methods ?? [],
                 instanceId: config.instanceId!,
-                response: seekedObject.response,
-                headers: seekedObject.headers,
+                response: instance?.response ?? null,
+                headers: instanceHeaders,
                 isNewInstance: false,
             }
         }
