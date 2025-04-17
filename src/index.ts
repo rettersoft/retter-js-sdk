@@ -449,12 +449,15 @@ export default class Retter {
         if (!this.initialized) throw new Error('Retter SDK not initialized.')
 
         let instance
+        let instanceHeaders = {}
+
         if (config.instanceId && config.useLocal) {
             await this.sendToActionQueue({ action: RetterActions.EMPTY })
         } else {
-            let { data } = await this.sendToActionQueue<any>({ action: RetterActions.COS_INSTANCE, data: config })
+            let { data, headers } = await this.sendToActionQueue<any>({ action: RetterActions.COS_INSTANCE, data: config })
             instance = data
             config.instanceId = instance.instanceId
+            instanceHeaders = headers ?? {}
         }
 
         const seekedObject = this.cloudObjects.find(r => r.config.classId === config.classId && r.config.instanceId === config.instanceId)
@@ -464,9 +467,12 @@ export default class Retter {
                 state: seekedObject.state,
                 listInstances: seekedObject.listInstances,
                 getState: seekedObject.getState,
+                init: instance?.init ?? {},
+                get: instance?.get ?? {},
                 methods: instance?.methods ?? [],
                 instanceId: config.instanceId!,
-                response: seekedObject.response,
+                response: instance?.response ?? null,
+                headers: instanceHeaders,
                 isNewInstance: false,
             }
         }
@@ -513,8 +519,11 @@ export default class Retter {
             state,
             getState,
             listInstances,
+            init: instance?.init ?? {},
+            get: instance?.get ?? {},
             methods: instance?.methods ?? [],
             response: instance?.response ?? null,
+            headers: instanceHeaders,
             instanceId: config.instanceId!,
             isNewInstance: instance?.newInstance ?? false,
         }

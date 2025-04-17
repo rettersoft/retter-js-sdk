@@ -145,8 +145,17 @@ export interface RetterCloudObjectConfig {
 export interface RetterCloudObject {
     instanceId: string
     isNewInstance: boolean
+    init: {
+        inputModel?: string
+        queryStringModel?: string
+    }
+    get: {
+        inputModel?: string
+        queryStringModel?: string
+    }
     methods: RetterCloudObjectMethod[]
     response?: any
+    headers?: AxiosResponse['headers']
     call<T>(params: RetterCloudObjectCall): Promise<RetterCallResponse<T>>
     listInstances(params?: RetterCloudObjectRequest): Promise<string[]>
     getState(params?: RetterCloudObjectRequest): Promise<RetterCallResponse<RetterCloudObjectState>>
