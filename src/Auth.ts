@@ -1,4 +1,4 @@
-import jwt from 'jwt-decode'
+import { jwtDecode } from 'jwt-decode'
 import Cookies from 'js-cookie'
 
 import RetterRequest from './Request'
@@ -144,7 +144,7 @@ export default class Auth {
      * @returns RetterTokenPayload
      */
     protected decodeToken(token: string): RetterTokenPayload {
-        return jwt<RetterTokenPayload>(token)
+        return jwtDecode<RetterTokenPayload>(token)
     }
 
     /**
