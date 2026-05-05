@@ -85,7 +85,7 @@ export class RioCache {
     const ageHeader = response.headers['age']
     const dateHeader = response.headers['date']
 
-    const maxAgeMatch = cacheControl?.match(/max-age=(\d+)/)
+    const maxAgeMatch = typeof cacheControl === 'string' ? cacheControl.match(/max-age=(\d+)/) : null
     const maxAge = maxAgeMatch ? parseInt(maxAgeMatch[1], 10) : 0
     const age = ageHeader ? parseInt(ageHeader, 10) : 0
 
