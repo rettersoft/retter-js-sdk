@@ -133,7 +133,7 @@ export interface RetterCloudObjectConfig {
     headers?: { [key: string]: string }
     pathParams?: string
     queryStringParams?: { [key: string]: string }
-    httpMethod?: 'get' | 'delete' | 'post' | 'put'
+    httpMethod?: 'get' | 'delete' | 'head' | 'options' | 'post' | 'put' | 'patch'
     base64Encode?: boolean
     body?: any
     platform?: string
