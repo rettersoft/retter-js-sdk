@@ -12,6 +12,12 @@ Using yarn:
 yarn add @retter/sdk
 ```
 
+Using bun:
+
+```bash
+bun add @retter/sdk
+```
+
 Using unkpg:
 
 ```html

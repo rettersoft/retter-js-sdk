@@ -1,0 +1,12 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "rootDir": ".",
+        "outDir": ".test-build",
+        "target": "es2020",
+        "declaration": false,
+        "resolveJsonModule": true
+    },
+    "include": ["src", "test"],
+    "exclude": ["node_modules", "dist", "bundle", ".test-build"]
+}

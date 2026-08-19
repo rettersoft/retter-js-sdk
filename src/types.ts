@@ -138,7 +138,7 @@ export interface RetterCloudObjectConfig {
     body?: any
     platform?: string
     culture?: string
-    useLocal?: boolean
+    useLocal: boolean
     token?: string
 }
 

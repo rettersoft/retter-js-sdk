@@ -139,7 +139,7 @@ describe('Auth', () => {
       }
 
       const mockHttp = {
-        call: mock.fn(async () => ({ data: freshTokenData })),
+        call: mock.fn(async (...args: any[]) => ({ data: freshTokenData })),
       }
 
       const auth = new Auth(createConfig())
@@ -167,7 +167,7 @@ describe('Auth', () => {
       }
 
       const mockHttp = {
-        call: mock.fn(async () => ({ data: responseTokenData })),
+        call: mock.fn(async (...args: any[]) => ({ data: responseTokenData })),
       }
 
       const auth = new Auth(createConfig())
@@ -191,7 +191,7 @@ describe('Auth', () => {
   describe('signOut', () => {
     it('should call /TOKEN/signOut with bearer token', async () => {
       const mockHttp = {
-        call: mock.fn(async () => ({})),
+        call: mock.fn(async (...args: any[]) => ({})),
       }
 
       const auth = new Auth(createConfig())
@@ -208,7 +208,7 @@ describe('Auth', () => {
 
     it('should not call server when no token stored', async () => {
       const mockHttp = {
-        call: mock.fn(async () => ({})),
+        call: mock.fn(async (...args: any[]) => ({})),
       }
 
       const auth = new Auth(createConfig())
@@ -220,7 +220,7 @@ describe('Auth', () => {
 
     it('should silently swallow errors', async () => {
       const mockHttp = {
-        call: mock.fn(async () => { throw new Error('network error') }),
+        call: mock.fn(async (...args: any[]) => { throw new Error('network error') }),
       }
 
       const auth = new Auth(createConfig())

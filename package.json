@@ -18,6 +18,7 @@
     "homepage": "https://github.com/rettersoft/retter-js-sdk#readme",
     "author": "Semih Ayhan",
     "license": "ISC",
+    "packageManager": "bun@1.3.14",
     "dependencies": {
         "@types/js-cookie": "3.0.6",
         "axios": "1.18.0",
@@ -27,16 +28,15 @@
         "rxjs": "7.8.2"
     },
     "scripts": {
-        "build": "tsc && webpack",
-        "test": "node --import tsx --test test/**"
+        "prebuild": "bun scripts/gen-version.js",
+        "build": "tsc && bun scripts/build-bundle.js",
+        "pretest": "bun scripts/gen-version.js",
+        "test": "tsc -p tsconfig.test.json && node --test \".test-build/test/*.test.js\"",
+        "bump": "bun scripts/bump.js",
+        "release": "bun scripts/publish.js"
     },
     "devDependencies": {
         "@types/node": "22.10.10",
-        "ts-loader": "9.5.1",
-        "ts-node": "10.9.2",
-        "tsx": "4.21.0",
-        "typescript": "5.7.3",
-        "webpack": "5.105.4",
-        "webpack-cli": "4.10.0"
+        "typescript": "5.7.3"
     }
 }

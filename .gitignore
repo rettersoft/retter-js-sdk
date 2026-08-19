@@ -7,6 +7,10 @@ bundle
 **/*.js
 **/*.js.map
 
-!webpack.config.js
+!scripts/*.js
+
+.test-build
 
 .idea/
+
+.codemogger

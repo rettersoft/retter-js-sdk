@@ -3,6 +3,7 @@ import axios, { AxiosInstance } from 'axios'
 import { base64Encode, sort } from './helpers'
 import { RetterCallResponse, RetterClientConfig, RetterRegion, RetterRegionConfig } from './types'
 import { RioCache } from './cache'
+import { SDK_VERSION } from './version'
 
 const RetterRegions: RetterRegionConfig[] = [
     {
@@ -47,6 +48,7 @@ export default class Request {
             responseType: 'json',
             headers: {
                 'Content-Type': 'application/json',
+                'rio-sdk-version': SDK_VERSION,
             },
             timeout: 30000,
         })

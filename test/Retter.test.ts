@@ -49,7 +49,7 @@ describe('Retter - getCosEndpoint paths', () => {
     await new Promise(r => setTimeout(r, 50))
 
     try {
-      await rio.getCloudObject({ classId: 'MyClass' })
+      await rio.getCloudObject({ classId: 'MyClass', useLocal: false })
     } catch (_) {}
 
     assert.ok(capturedUrl.includes('INSTANCE/MyClass'), `Expected INSTANCE path, got: ${capturedUrl}`)
@@ -71,7 +71,7 @@ describe('Retter - getCosEndpoint paths', () => {
     await new Promise(r => setTimeout(r, 50))
 
     try {
-      await rio.getCloudObject({ classId: 'MyClass', key: { name: 'name', value: 'value' } })
+      await rio.getCloudObject({ classId: 'MyClass', key: { name: 'name', value: 'value' }, useLocal: false })
     } catch (_) {}
 
     assert.ok(capturedUrl.includes('INSTANCE/MyClass/name!value'), `Expected key-based path, got: ${capturedUrl}`)
@@ -97,7 +97,7 @@ describe('Retter - getCosEndpoint paths', () => {
     await new Promise(r => setTimeout(r, 50))
 
     try {
-      const obj = await rio.getCloudObject({ classId: 'MyClass' })
+      const obj = await rio.getCloudObject({ classId: 'MyClass', useLocal: false })
       await obj.call({ method: 'doSomething' })
     } catch (_) {}
 
@@ -148,7 +148,7 @@ describe('Retter - getCosEndpoint paths', () => {
     await new Promise(r => setTimeout(r, 50))
 
     try {
-      const obj = await rio.getCloudObject({ classId: 'MyClass' })
+      const obj = await rio.getCloudObject({ classId: 'MyClass', useLocal: false })
       await obj.getState()
     } catch (_) {}
 
@@ -176,7 +176,7 @@ describe('Retter - getCosEndpoint paths', () => {
     await new Promise(r => setTimeout(r, 50))
 
     try {
-      const obj = await rio.getCloudObject({ classId: 'MyClass' })
+      const obj = await rio.getCloudObject({ classId: 'MyClass', useLocal: false })
       const ids = await obj.listInstances()
       assert.deepEqual(ids, ['a', 'b'])
     } catch (_) {}
@@ -286,7 +286,7 @@ describe('Retter - culture and platform passthrough', () => {
     await new Promise(r => setTimeout(r, 50))
 
     try {
-      await rio.getCloudObject({ classId: 'Test' })
+      await rio.getCloudObject({ classId: 'Test', useLocal: false })
     } catch (_) {}
 
     assert.equal(capturedParams.__culture, 'tr-TR')
@@ -309,7 +309,7 @@ describe('Retter - culture and platform passthrough', () => {
     await new Promise(r => setTimeout(r, 50))
 
     try {
-      await rio.getCloudObject({ classId: 'Test' })
+      await rio.getCloudObject({ classId: 'Test', useLocal: false })
     } catch (_) {}
 
     assert.equal(capturedParams.__culture, 'en-us')

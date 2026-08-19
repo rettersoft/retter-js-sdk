@@ -4,6 +4,8 @@ import axios from 'axios'
 import Request from '../src/Request'
 import { RetterRegion } from '../src/types'
 import { base64Encode, sort } from '../src/helpers'
+import { SDK_VERSION } from '../src/version'
+import pkg from '../package.json'
 
 function mockAxiosCreate(handler: (config: any) => any) {
   mock.method(axios, 'create', () => handler)
@@ -226,6 +228,21 @@ describe('Request', () => {
       await assert.rejects(
         () => request.call('p1', 'TEST', { method: 'post', params: {} }),
       )
+    })
+  })
+
+  describe('default headers', () => {
+    it('should send rio-sdk-version matching package.json', async () => {
+      let createConfig: any
+      mock.method(axios, 'create', (config: any) => {
+        createConfig = config
+        return () => ({ status: 200, statusText: 'OK', headers: {}, data: {} })
+      })
+
+      new Request({ projectId: 'p1' })
+
+      assert.equal(createConfig.headers['rio-sdk-version'], SDK_VERSION)
+      assert.equal(SDK_VERSION, pkg.version)
     })
   })
 })
