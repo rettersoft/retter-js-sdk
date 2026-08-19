@@ -3,6 +3,7 @@ import axios, { AxiosInstance } from 'axios'
 import { base64Encode, sort } from './helpers'
 import { RetterCallResponse, RetterClientConfig, RetterRegion, RetterRegionConfig } from './types'
 import { RioCache } from './cache'
+import { SDK_VERSION } from './version'
 
 const RetterRegions: RetterRegionConfig[] = [
     {
@@ -29,7 +30,7 @@ export default class Request {
     private axiosInstance?: AxiosInstance
 
     constructor(config: RetterClientConfig) {
-        this.createAxiosInstance()
+        this.createAxiosInstance(config)
 
         this.url = config.url
         if (!config.region) config.region = RetterRegion.euWest1
@@ -42,12 +43,16 @@ export default class Request {
         }
     }
 
-    protected createAxiosInstance() {
+    protected createAxiosInstance(config: RetterClientConfig) {
+        const headers: { [key: string]: string } = {
+            'Content-Type': 'application/json',
+        }
+        if (config.sdkVersionHeader !== false) {
+            headers['rio-sdk-version'] = SDK_VERSION
+        }
         this.axiosInstance! = axios.create({
             responseType: 'json',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers,
             timeout: 30000,
         })
     }

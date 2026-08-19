@@ -14,6 +14,7 @@ export interface RetterClientConfig {
     culture?: string
     retryConfig?: RetterRetryConfig
     useCookies?: boolean
+    sdkVersionHeader?: boolean
     /** Use it only in non-browser environments */
     memoryCache?: RetterMemoryCacheConfig
     [key: string]: any
@@ -138,7 +139,7 @@ export interface RetterCloudObjectConfig {
     body?: any
     platform?: string
     culture?: string
-    useLocal?: boolean
+    useLocal: boolean
     token?: string
 }
 

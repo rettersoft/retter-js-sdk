@@ -1,6 +1,6 @@
 {
     "name": "@retter/sdk",
-    "version": "0.15.0",
+    "version": "0.16.0",
     "description": "Client sdk for retter.io",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -27,6 +27,7 @@
         "rxjs": "7.8.2"
     },
     "scripts": {
+        "prebuild": "node scripts/generate-version.js",
         "build": "tsc && webpack",
         "test": "node --import tsx --test test/**"
     },

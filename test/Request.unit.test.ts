@@ -1,9 +1,12 @@
 import { describe, it, mock } from 'node:test'
 import assert from 'node:assert'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import axios from 'axios'
 import Request from '../src/Request'
 import { RetterRegion } from '../src/types'
 import { base64Encode, sort } from '../src/helpers'
+import { SDK_VERSION } from '../src/version'
 
 function mockAxiosCreate(handler: (config: any) => any) {
   mock.method(axios, 'create', () => handler)
@@ -212,6 +215,43 @@ describe('Request', () => {
       await request.call('p1', 'TEST', { method: 'post', params: {}, data: {} })
 
       assert.equal(callCount, 2) // both calls hit network
+    })
+  })
+
+  describe('rio-sdk-version header', () => {
+    it('should add rio-sdk-version header to axios defaults by default', () => {
+      let createConfig: any
+      mock.method(axios, 'create', (config: any) => {
+        createConfig = config
+        return async () => ({ status: 200, statusText: 'OK', headers: {}, data: {} })
+      })
+
+      new Request({ projectId: 'p1' })
+
+      assert.equal(createConfig.headers['rio-sdk-version'], SDK_VERSION)
+      assert.equal(createConfig.headers['Content-Type'], 'application/json')
+    })
+
+    it('should not add rio-sdk-version header when sdkVersionHeader is false', () => {
+      let createConfig: any
+      mock.method(axios, 'create', (config: any) => {
+        createConfig = config
+        return async () => ({ status: 200, statusText: 'OK', headers: {}, data: {} })
+      })
+
+      new Request({ projectId: 'p1', sdkVersionHeader: false })
+
+      assert.equal(createConfig.headers['rio-sdk-version'], undefined)
+      assert.equal(createConfig.headers['Content-Type'], 'application/json')
+    })
+
+    it('should keep SDK_VERSION in sync with package.json', () => {
+      const pkg = JSON.parse(readFileSync(join(__dirname, '..', 'package.json'), 'utf-8'))
+      assert.equal(
+        SDK_VERSION,
+        pkg.version,
+        'src/version.ts is out of sync with package.json — run `node scripts/generate-version.js` (or `npm run build`)'
+      )
     })
   })
 

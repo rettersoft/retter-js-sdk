@@ -38,6 +38,7 @@ interface RetterClientConfig {
     region?: RetterRegion
     platform?: string
     culture?: string
+    sdkVersionHeader?: boolean // default: true,
     memoryCache?: { // use it only in non-browser environments
       enabled: boolean
       maxEntryCount?: number // default: 100

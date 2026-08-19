@@ -10,3 +10,4 @@ bundle
 !webpack.config.js
 
 .idea/
+!scripts/generate-version.js
