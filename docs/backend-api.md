@@ -211,7 +211,7 @@ signInWithCustomToken(auth, firebase.customToken)
 
 `{userId}` and `{identity}` come from the decoded access token. Document fields prefixed with `__` are stripped before delivery to subscribers. Listeners are de-duplicated per `{projectId}_{classId}_{instanceId}_{scope}` and torn down (plus Firebase `signOut`) on `rio.signOut()` or re-authentication.
 
-**Listener errors** (since 0.17.0): `onSnapshot`'s `onError` is wired. When Firestore reports an error (`permission-denied`, `unauthenticated`, `unavailable`, …) the SDK builds a `RetterStateError { scope, classId, instanceId, code, message, original }`, emits it to the `error` handler passed to `state.<scope>.subscribe(next, error)` / `subscribe({ next, error })`, and to the instance-wide `rio.stateErrors` observable. The de-dupe entry for that listener is removed so a later `subscribe()` re-attaches. The state `ReplaySubject` itself never errors, so function-only subscribers see exactly the pre-0.17.0 behaviour (silence).
+**Listener errors** (since 0.17.0): `onSnapshot`'s `onError` is wired. When Firestore reports an error (`permission-denied`, `unauthenticated`, `unavailable`, …) the SDK builds a `RetterStateError { scope, classId, instanceId, code, message, original }`, emits it to the `error` handler passed to `state.<scope>.subscribe(next, error)` / `subscribe({ next, error })`, and to the instance-wide `rio.stateErrors` observable. The de-dupe entry for that listener is removed so a later `subscribe()` re-attaches. The state `ReplaySubject` itself never errors, so function-only subscribers see exactly the pre-0.17.0 behaviour (silence). Usage guide: [`realtime-state-errors.md`](./realtime-state-errors.md).
 
 ---
 

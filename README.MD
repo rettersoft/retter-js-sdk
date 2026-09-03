@@ -168,7 +168,7 @@ rio.stateErrors.subscribe((error: RetterStateError) => {})
 
 After an error the underlying listener is closed by Firestore and no further state events arrive. Calling `subscribe()` again
 on the same scope re-attaches a fresh listener. The returned `Subscription`'s `unsubscribe()` detaches both the state and the
-error handler.
+error handler. See [`docs/realtime-state-errors.md`](./docs/realtime-state-errors.md) for retry patterns and migration notes.
 
 ### Method Calls
 
