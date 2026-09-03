@@ -138,6 +138,38 @@ cloudObject.state.role.subscribe((state: { [key: string]: any }) => {
 })
 ```
 
+#### Handling realtime errors
+
+Firestore may reject or drop a listener (e.g. `permission-denied`, `unauthenticated`, `unavailable`). Pass an error handler
+as the second argument, or use the observer form, to be notified. Function-only subscriptions keep their existing behaviour
+and are not notified.
+
+```ts
+cloudObject.state.public.subscribe(
+    (state: { [key: string]: any }) => {
+        // latest state
+    },
+    (error: RetterStateError) => {
+        // error.scope: 'public' | 'user' | 'role'
+        // error.code: Firestore error code, e.g. 'permission-denied'
+        // error.classId, error.instanceId, error.message, error.original
+    }
+)
+
+// or RxJS observer form
+cloudObject.state.user.subscribe({
+    next: state => {},
+    error: (error: RetterStateError) => {},
+})
+
+// Every state error across all cloud objects, in one place
+rio.stateErrors.subscribe((error: RetterStateError) => {})
+```
+
+After an error the underlying listener is closed by Firestore and no further state events arrive. Calling `subscribe()` again
+on the same scope re-attaches a fresh listener. The returned `Subscription`'s `unsubscribe()` detaches both the state and the
+error handler.
+
 ### Method Calls
 
 Any cloud method can be called via sdk. `method` parameter must be specified. Other parameters can be seen in interface below.

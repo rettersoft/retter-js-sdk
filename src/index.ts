@@ -1,5 +1,5 @@
 import { FirebaseApp, initializeApp } from 'firebase/app'
-import { doc, Firestore, onSnapshot, getFirestore, Unsubscribe } from 'firebase/firestore'
+import { doc, Firestore, FirestoreError, onSnapshot, getFirestore, Unsubscribe } from 'firebase/firestore'
 import { Auth, getAuth, signInWithCustomToken, signOut } from 'firebase/auth'
 import { defer, Notification, Observable, of, ReplaySubject, Subject } from 'rxjs'
 import { concatMap, distinctUntilChanged, filter, map, materialize, mergeMap, share, switchMap, tap } from 'rxjs/operators'
@@ -21,6 +21,9 @@ import {
     RetterCloudObjectRequest,
     RetterCloudObjectState,
     RetterCloudObjectStaticCall,
+    RetterStateError,
+    RetterStateErrorHandler,
+    RetterStateScope,
     RetterTokenPayload,
 } from './types'
 
@@ -56,6 +59,8 @@ export default class Retter {
     private cloudObjects: RetterCloudObjectItem[] = []
 
     private listeners: { [key: string]: any } = {}
+
+    private stateErrorSubject = new Subject<RetterStateError>()
 
     private constructor() {}
 
@@ -328,16 +333,51 @@ export default class Retter {
         }
     }
 
-    protected getFirebaseListener(queue: ReplaySubject<any>, collection: string, documentId: string): Unsubscribe {
+    /**
+     * Single seam around Firestore so tests can stub the realtime channel without a real Firebase app.
+     */
+    protected createStateListener(
+        collection: string,
+        documentId: string,
+        onNext: (data: { [key: string]: any }) => void,
+        onError: (error: FirestoreError) => void
+    ): Unsubscribe {
         const document = doc(this.firestore!, collection, documentId)
+        return onSnapshot(document, snapshot => onNext(Object.assign({}, snapshot.data())), onError)
+    }
 
-        return onSnapshot(document, doc => {
-            const data = Object.assign({}, doc.data())
-            for (const key of Object.keys(data)) {
-                if (key.startsWith('__')) delete data[key]
+    protected getFirebaseListener(
+        queue: ReplaySubject<any>,
+        errors: Subject<RetterStateError>,
+        meta: { scope: RetterStateScope; classId: string; instanceId: string; listenerKey: string },
+        collection: string,
+        documentId: string
+    ): Unsubscribe {
+        return this.createStateListener(
+            collection,
+            documentId,
+            data => {
+                for (const key of Object.keys(data)) {
+                    if (key.startsWith('__')) delete data[key]
+                }
+                queue.next(data)
+            },
+            error => {
+                // Firestore closes the listener after an error; drop it so a later subscribe() re-attaches.
+                delete this.listeners[meta.listenerKey]
+
+                const stateError: RetterStateError = {
+                    scope: meta.scope,
+                    classId: meta.classId,
+                    instanceId: meta.instanceId,
+                    code: (error as any)?.code ?? 'unknown',
+                    message: (error as any)?.message ?? String(error),
+                    original: error,
+                }
+                errors.next(stateError)
+                this.stateErrorSubject.next(stateError)
             }
-            queue.next(data)
-        })
+        )
     }
 
     protected async getFirebaseState(config: RetterCloudObjectConfig) {
@@ -352,53 +392,63 @@ export default class Retter {
             public: new ReplaySubject(1),
         }
 
-        const state = {
-            role: {
-                queue: queues.role,
-                subscribe: (observer: any) => {
-                    if (!this.listeners[`${projectId}_${config.classId}_${config.instanceId}_role`]) {
-                        const listener = this.getFirebaseListener(
-                            queues.role,
-                            `/projects/${projectId}/classes/${config.classId}/instances/${config.instanceId}/roleState`,
-                            user!.identity!
-                        )
-                        unsubscribers.push(listener)
-                        this.listeners[`${projectId}_${config.classId}_${config.instanceId}_role`] = listener
-                    }
-
-                    return queues.role.subscribe(observer)
-                },
-            },
-            user: {
-                queue: queues.user,
-                subscribe: (observer: any) => {
-                    if (!this.listeners[`${projectId}_${config.classId}_${config.instanceId}_user`]) {
-                        const listener = this.getFirebaseListener(
-                            queues.user,
-                            `/projects/${projectId}/classes/${config.classId}/instances/${config.instanceId}/userState`,
-                            user!.userId!
-                        )
-                        unsubscribers.push(listener)
-                        this.listeners[`${projectId}_${config.classId}_${config.instanceId}_user`] = listener
-                    }
-
-                    return queues.user.subscribe(observer)
-                },
-            },
-            public: {
-                queue: queues.public,
-                subscribe: (observer: any) => {
-                    if (!this.listeners[`${projectId}_${config.classId}_${config.instanceId}_public`]) {
-                        const listener = this.getFirebaseListener(queues.public, `/projects/${projectId}/classes/${config.classId}/instances`, config.instanceId!)
-                        unsubscribers.push(listener)
-                        this.listeners[`${projectId}_${config.classId}_${config.instanceId}_public`] = listener
-                    }
-                    return queues.public.subscribe(observer)
-                },
-            },
+        const errorQueues = {
+            role: new Subject<RetterStateError>(),
+            user: new Subject<RetterStateError>(),
+            public: new Subject<RetterStateError>(),
         }
 
-        return { state, unsubscribers }
+        const documentIds: { [scope in RetterStateScope]: () => string } = {
+            role: () => user!.identity!,
+            user: () => user!.userId!,
+            public: () => config.instanceId!,
+        }
+        const collections: { [scope in RetterStateScope]: string } = {
+            role: `/projects/${projectId}/classes/${config.classId}/instances/${config.instanceId}/roleState`,
+            user: `/projects/${projectId}/classes/${config.classId}/instances/${config.instanceId}/userState`,
+            public: `/projects/${projectId}/classes/${config.classId}/instances`,
+        }
+
+        const buildScope = (scope: RetterStateScope) => ({
+            queue: queues[scope],
+            subscribe: (observerOrNext?: any, error?: RetterStateErrorHandler) => {
+                const listenerKey = `${projectId}_${config.classId}_${config.instanceId}_${scope}`
+                if (!this.listeners[listenerKey]) {
+                    const listener = this.getFirebaseListener(
+                        queues[scope],
+                        errorQueues[scope],
+                        { scope, classId: config.classId, instanceId: config.instanceId!, listenerKey },
+                        collections[scope],
+                        documentIds[scope]()
+                    )
+                    unsubscribers.push(listener)
+                    this.listeners[listenerKey] = listener
+                }
+
+                // Legacy behaviour: data queue never errors, so function-only subscribers are unaffected.
+                const subscription = queues[scope].subscribe(observerOrNext)
+
+                const errorHandler: RetterStateErrorHandler | undefined =
+                    typeof error === 'function'
+                        ? error
+                        : observerOrNext && typeof observerOrNext === 'object' && typeof observerOrNext.error === 'function'
+                        ? observerOrNext.error.bind(observerOrNext)
+                        : undefined
+                if (errorHandler) {
+                    subscription.add(errorQueues[scope].subscribe(errorHandler))
+                }
+
+                return subscription
+            },
+        })
+
+        const state = {
+            role: buildScope('role'),
+            user: buildScope('user'),
+            public: buildScope('public'),
+        }
+
+        return { state, unsubscribers, errorQueues }
     }
 
     protected async clearCloudObjects() {
@@ -411,6 +461,9 @@ export default class Retter {
                 i.state?.role.queue?.complete()
                 i.state?.user.queue?.complete()
                 i.state?.public.queue?.complete()
+                i.errorQueues?.role.complete()
+                i.errorQueues?.user.complete()
+                i.errorQueues?.public.complete()
             })
         }
         this.listeners = {}
@@ -477,7 +530,7 @@ export default class Retter {
             }
         }
 
-        const { state, unsubscribers } = await this.getFirebaseState(config)
+        const { state, unsubscribers, errorQueues } = await this.getFirebaseState(config)
 
         const call = async <T>(params: RetterCloudObjectCall): Promise<RetterCallResponse<T>> => {
             params.retryConfig = { ...this.clientConfig!.retryConfig, ...params.retryConfig }
@@ -528,7 +581,7 @@ export default class Retter {
             isNewInstance: instance?.newInstance ?? false,
         }
 
-        this.cloudObjects.push({ ...retVal, config, unsubscribers })
+        this.cloudObjects.push({ ...retVal, config, unsubscribers, errorQueues })
 
         return retVal
     }
@@ -540,6 +593,14 @@ export default class Retter {
             action: RetterActions.COS_STATIC_CALL,
             data: { ...params, classId: params.classId },
         })
+    }
+
+    /**
+     * Instance-wide stream of realtime state listener errors across all cloud objects and scopes.
+     * Complements the per-subscription `error` callback; never errors or completes on its own.
+     */
+    public get stateErrors(): Observable<RetterStateError> {
+        return this.stateErrorSubject.asObservable()
     }
 
     public get authStatus(): Observable<RetterAuthChangedEvent> {

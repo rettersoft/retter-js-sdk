@@ -1,6 +1,6 @@
 import { AxiosResponse } from 'axios'
 import { Unsubscribe } from 'firebase/firestore'
-import { ReplaySubject, Subscription } from 'rxjs'
+import { Observer, ReplaySubject, Subject, Subscription } from 'rxjs'
 
 // Config
 export interface RetterClientConfig {
@@ -166,6 +166,8 @@ export interface RetterCloudObject {
 export interface RetterCloudObjectItem extends RetterCloudObject {
     config: RetterCloudObjectConfig
     unsubscribers: Unsubscribe[]
+    /** Per-scope error channels backing `state.<scope>.subscribe(next, error)` */
+    errorQueues?: { role: Subject<RetterStateError>; user: Subject<RetterStateError>; public: Subject<RetterStateError> }
 }
 
 export type RetterCallResponse<T> = Omit<AxiosResponse<T>, 'config' | 'request'>
@@ -204,9 +206,35 @@ interface RetterCloudObjectStates {
     public: RetterCloudObjectStateObservable
 }
 
+export type RetterStateScope = 'public' | 'user' | 'role'
+
+/**
+ * Error emitted when a realtime state (Firestore) listener fails.
+ * After this error the underlying listener is closed by Firestore; calling `subscribe()` again re-attaches it.
+ */
+export interface RetterStateError {
+    scope: RetterStateScope
+    classId: string
+    instanceId: string
+    /** Firestore error code, e.g. 'permission-denied' | 'unauthenticated' | 'unavailable' */
+    code: string
+    message: string
+    /** Original error thrown by Firestore */
+    original: unknown
+}
+
+export type RetterStateNext = (state: { [key: string]: any }) => void
+export type RetterStateErrorHandler = (error: RetterStateError) => void
+
 interface RetterCloudObjectStateObservable {
     queue?: ReplaySubject<any>
-    subscribe: (state?: any | undefined) => Subscription
+    /**
+     * Subscribe to realtime state changes.
+     * - `subscribe(next)` — legacy form, errors are not delivered
+     * - `subscribe(next, error)` — receives listener errors in `error`
+     * - `subscribe({ next, error })` — RxJS observer form
+     */
+    subscribe: (observerOrNext?: RetterStateNext | Partial<Observer<any>> | any, error?: RetterStateErrorHandler) => Subscription
 }
 
 export enum Runtime {
