@@ -1,6 +1,6 @@
 {
     "name": "@retter/sdk",
-    "version": "0.17.1",
+    "version": "0.17.2",
     "description": "Client sdk for retter.io",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -19,7 +19,6 @@
     "author": "Semih Ayhan",
     "license": "ISC",
     "dependencies": {
-        "@types/js-cookie": "3.0.6",
         "axios": "1.20.0",
         "firebase": "12.17.0",
         "js-cookie": "3.0.8",
@@ -32,9 +31,9 @@
         "test": "node --import tsx --test test/**"
     },
     "devDependencies": {
+        "@types/js-cookie": "3.0.6",
         "@types/node": "22.10.10",
         "ts-loader": "9.5.1",
-        "ts-node": "10.9.2",
         "tsx": "4.21.0",
         "typescript": "5.7.3",
         "webpack": "5.105.4",
